@@ -75,42 +75,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         builder: (_, auth, __) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Avatar
-            Center(
-              child: Stack(children: [
-                Container(
-                  width: 90, height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.primary, width: 3),
-                  ),
-                  child: ClipOval(
-                    child: Image.network(
-                      auth.user?.profileImageUrl ?? 'https://i.pravatar.cc/200?img=11',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: AppColors.primary,
-                        child: const Icon(Icons.person, size: 46, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 0, right: 0,
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      width: 28, height: 28,
-                      decoration: const BoxDecoration(
-                          color: AppColors.primary, shape: BoxShape.circle),
-                      child: const Icon(Icons.camera_alt_rounded,
-                          size: 15, color: Colors.black87),
-                    ),
-                  ),
-                ),
-              ]),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
 
             Form(
               key: _formKey,

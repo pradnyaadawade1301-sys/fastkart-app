@@ -1,8 +1,6 @@
 // lib/screens/profile/addresses_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
-import '../../providers/auth_provider.dart';
 
 class AddressesScreen extends StatefulWidget {
   const AddressesScreen({super.key});

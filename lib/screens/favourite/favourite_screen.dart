@@ -12,7 +12,7 @@ class FavouriteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      // bg handled by theme
       appBar: AppBar(
         backgroundColor: AppColors.primaryDark,
         automaticallyImplyLeading: false,
@@ -47,7 +47,7 @@ class FavouriteScreen extends StatelessWidget {
           }
           return Column(children: [
             Container(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(children: [
                 Text('${fav.count} saved restaurant${fav.count == 1 ? '' : 's'}',
@@ -108,7 +108,7 @@ class _FavCard extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(

@@ -91,7 +91,6 @@ class _LeisureScreenState extends State<LeisureScreen>
                           style: TextStyle(fontSize: 13, color: Colors.white70),
                         ),
                         const SizedBox(height: 16),
-                        // ── Stats Row ──────────────────────────────────────
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 24),
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -575,7 +574,8 @@ class _ServiceCard extends StatelessWidget {
   }
 
   void _showBookingSheet(BuildContext context, Map<String, dynamic> data, Color color, int pricePerPerson) {
-    int guests = 1;
+    // ── CHANGE 1: guests starts at 0 ──
+    int guests = 0;
     int selectedDateIdx = 0;
     final now = DateTime.now();
     final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -657,7 +657,8 @@ class _ServiceCard extends StatelessWidget {
               const Text('Number of Guests', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
               Row(children: [
                 GestureDetector(
-                  onTap: () { if (guests > 1) setS(() => guests--); },
+                  // ── CHANGE 1: min guests is 0 ──
+                  onTap: () { if (guests > 0) setS(() => guests--); },
                   child: Container(
                     width: 32, height: 32,
                     decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(8)),
@@ -691,21 +692,24 @@ class _ServiceCard extends StatelessWidget {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () {
-                  final selectedDay = now.add(Duration(days: selectedDateIdx));
-                  final dateStr = '${selectedDay.day} ${_monthShort(selectedDay.month)}';
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('✅  ${data['name']} booked for $guests guest${guests > 1 ? 's' : ''} on $dateStr!'),
-                      backgroundColor: color,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
-                },
+                // ── CHANGE 2: "Confirm Booking" opens user details form ──
+                onPressed: guests == 0
+                    ? null
+                    : () {
+                        final selectedDay = now.add(Duration(days: selectedDateIdx));
+                        Navigator.pop(context);
+                        _showUserDetailsForm(
+                          context: context,
+                          data: data,
+                          color: color,
+                          guests: guests,
+                          selectedDay: selectedDay,
+                          pricePerPerson: pricePerPerson,
+                        );
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: color,
+                  disabledBackgroundColor: color.withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
@@ -717,6 +721,139 @@ class _ServiceCard extends StatelessWidget {
       ),
     );
   }
+
+  // ── CHANGE 2: User details form ──────────────────────────────────────────────
+  void _showUserDetailsForm({
+    required BuildContext context,
+    required Map<String, dynamic> data,
+    required Color color,
+    required int guests,
+    required DateTime selectedDay,
+    required int pricePerPerson,
+  }) {
+    final nameCtrl  = TextEditingController();
+    final roomCtrl  = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final formKey   = GlobalKey<FormState>();
+    final dateStr   = '${selectedDay.day} ${_monthShort(selectedDay.month)}';
+    final total     = pricePerPerson * guests;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text('Your Details',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(
+                  '${data['name']}  •  $guests guest${guests == 1 ? '' : 's'}  •  $dateStr  •  ₹$total',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+                const SizedBox(height: 20),
+
+                // Name
+                TextFormField(
+                  controller: nameCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: _inputDeco('Full Name', Icons.person_outline, color),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,
+                ),
+                const SizedBox(height: 14),
+
+                // Room
+                TextFormField(
+                  controller: roomCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: _inputDeco('Room Number', Icons.door_front_door_outlined, color),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter room number' : null,
+                ),
+                const SizedBox(height: 14),
+
+                // Phone
+                TextFormField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: _inputDeco('Phone Number', Icons.phone_outlined, color),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Please enter phone number';
+                    if (v.trim().length < 10) return 'Enter a valid phone number';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Submit
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (formKey.currentState!.validate()) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '✅  ${data['name']} booked for $guests guest${guests > 1 ? 's' : ''} on $dateStr!\n'
+                              'Name: ${nameCtrl.text.trim()}, Room: ${roomCtrl.text.trim()}',
+                            ),
+                            backgroundColor: color,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Confirm Booking',
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDeco(String label, IconData icon, Color color) => InputDecoration(
+    labelText: label,
+    prefixIcon: Icon(icon, color: color),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: color, width: 2),
+    ),
+  );
 
   String _monthShort(int m) {
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

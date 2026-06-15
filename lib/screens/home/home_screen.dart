@@ -9,6 +9,7 @@ import '../../models/app_models.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/restaurant_provider.dart';
 
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -29,20 +30,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _greetFade = CurvedAnimation(parent: _greetAnim, curve: Curves.easeOut);
     _greetAnim.forward();
 
-    // ✅ FIX: sirf tab load karo jab data pehle se loaded nahi hai
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final prov = context.read<RestaurantProvider>();
-      if (!prov.isLoaded) {
-        prov.loadData();
-      }
-    });
+      if (!prov.isLoaded) prov.loadData();
 
-    _autoTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted) return;
-      final prov = context.read<RestaurantProvider>();
-      if (prov.banners.isEmpty) return;
-      final next = (_bannerIdx + 1) % prov.banners.length;
-      _bannerCtrl.animateToPage(next, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+      _autoTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+        if (!mounted) return;
+        final prov = context.read<RestaurantProvider>();
+        if (prov.banners.isEmpty) return;
+        if (!_bannerCtrl.hasClients) return;
+        final next = (_bannerIdx + 1) % prov.banners.length;
+        _bannerCtrl.animateToPage(next, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+      });
     });
   }
 
@@ -64,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
       body: Consumer<RestaurantProvider>(
         builder: (_, prov, __) {
           if (prov.isLoading) {
@@ -81,7 +79,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           }
           return RefreshIndicator(
             color: AppColors.primary,
-            // ✅ FIX: loadData ki jagah refreshData use karo
             onRefresh: prov.refreshData,
             child: CustomScrollView(
               slivers: [
@@ -91,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   expandedHeight: 140,
                   backgroundColor: AppColors.primaryDark,
                   automaticallyImplyLeading: false,
-
                   flexibleSpace: FlexibleSpaceBar(
                     background: Container(
                       decoration: const BoxDecoration(
@@ -176,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               child: Container(
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.surface,
                                   borderRadius: BorderRadius.circular(22),
                                   boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4))],
                                 ),
@@ -201,51 +197,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
 
-                // ── QUICK ACTIONS ─────────────────────────────────────
-                SliverToBoxAdapter(
-                  child: Container(
-                    decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFFFF6F00), Color(0xFFFFB300)], begin: Alignment.topLeft, end: Alignment.bottomRight)),
-                    child: Container(
-                      decoration: const BoxDecoration(color: Color(0xFFF2F2F7), borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-                      child: Column(children: [
-                        Container(
-                          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [Color(0xFFFF6F00), Color(0xFFFFB300)]),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [BoxShadow(color: const Color(0xFFFF6F00).withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 6))],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _QuickBtn(Icons.qr_code_scanner_rounded, 'Scan & Pay', () => _showScanPay(context), Colors.white),
-                              _vDivider(),
-                              _QuickBtn(Icons.payment_rounded, 'Pay Code', () => _showPayCode(context), Colors.white),
-                              _vDivider(),
-                              _QuickBtn(Icons.card_giftcard_rounded, 'Coupons', () => context.push('/offers'), Colors.white),
-                              _vDivider(),
-                              _QuickBtn(Icons.pedal_bike_rounded, 'Bike', () => context.push('/bikes'), Colors.white),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ]),
-                    ),
-                  ),
-                ),
-
                 // ── CATEGORY GRID ─────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(colors: [Color(0xFFFF6F00), Color(0xFFFFB300)], begin: Alignment.topLeft, end: Alignment.bottomRight),
                     ),
-                    child: _CategoryGrid(cats: prov.categories),
+                    child: Container(
+                      decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(28))),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
+                        ),
+                        child: _CategoryGrid(cats: prov.categories),
+                      ),
+                    ),
                   ),
                 ),
 
@@ -269,7 +239,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 // ── SERVICES ──────────────────────────────────────────
                 SliverToBoxAdapter(child: _SectionHeader(title: 'Our Services 🇮🇳', onSeeAll: () {})),
                 const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                const SliverToBoxAdapter(child: _ServicesGrid()),
+                // FIX 1: Removed 'const' — _ServicesGrid uses context so cannot be const
+                SliverToBoxAdapter(child: _ServicesGrid()),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
                 // ── OFFERS BANNER ─────────────────────────────────────
@@ -296,120 +267,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
         },
       ),
-    );
-  }
-
-  void _showScanPay(BuildContext context) {
-    showModalBottomSheet(
-      context: context, isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Container(
-        height: 420,
-        padding: const EdgeInsets.all(24),
-        child: Column(children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 20),
-          const Text('Scan & Pay', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 4),
-          const Text('Scan QR code to pay instantly', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
-          const SizedBox(height: 24),
-          Container(
-            width: 200, height: 200,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12)],
-            ),
-            child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.qr_code_scanner_rounded, size: 100, color: Colors.black87),
-              SizedBox(height: 8),
-              Text('Point camera at QR', style: TextStyle(fontSize: 11, color: Color(0xFF888888))),
-            ]),
-          ),
-          const SizedBox(height: 20),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            _payOption(context, Icons.account_balance_rounded, 'UPI', const Color(0xFF4CAF50)),
-            const SizedBox(width: 20),
-            _payOption(context, Icons.credit_card_rounded, 'Card', const Color(0xFF2196F3)),
-            const SizedBox(width: 20),
-            _payOption(context, Icons.account_balance_wallet_rounded, 'Wallet', const Color(0xFF9C27B0)),
-          ]),
-        ]),
-      ),
-    );
-  }
-
-  Widget _payOption(BuildContext context, IconData icon, String label, Color color) {
-    return GestureDetector(
-      onTap: () { Navigator.pop(context); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Pay via $label selected'), backgroundColor: color)); },
-      child: Column(children: [
-        Container(width: 48, height: 48, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-          child: Icon(icon, color: color, size: 24)),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-      ]),
-    );
-  }
-
-  void _showPayCode(BuildContext context) {
-    showModalBottomSheet(
-      context: context, isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Container(
-        height: 380,
-        padding: const EdgeInsets.all(24),
-        child: Column(children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 20),
-          const Text('Pay with Code', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 4),
-          const Text('Enter merchant payment code', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFFFF6F00), Color(0xFFFFB300)]),
-              borderRadius: BorderRadius.circular(16)),
-            child: const Column(children: [
-              Text('Your Payment Code', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              SizedBox(height: 8),
-              Text('FK - 4821 - 7736', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 2)),
-              SizedBox(height: 8),
-              Text('Valid for 10 minutes', style: TextStyle(color: Colors.white70, fontSize: 11)),
-            ]),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(width: double.infinity, height: 50,
-            child: ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Refresh Code', style: TextStyle(fontWeight: FontWeight.w700)),
-            )),
-        ]),
-      ),
-    );
-  }
-
-  Widget _vDivider() => Container(width: 1, height: 32, color: Colors.white.withValues(alpha: 0.3));
-}
-
-// ── QUICK BTN ──────────────────────────────────────────────────────────────
-class _QuickBtn extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color color;
-  const _QuickBtn(this.icon, this.label, this.onTap, this.color);
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: color, size: 26),
-        const SizedBox(height: 5),
-        Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
-      ]),
     );
   }
 }
@@ -447,7 +304,9 @@ class _CategoryGrid extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 3))],
               ),
-              child: Center(child: Text(cat.icon, style: const TextStyle(fontSize: 26))),
+              child: Center(
+                child: Text(cat.icon, style: const TextStyle(fontSize: 26)),
+              ),
             ),
             const SizedBox(height: 5),
             Text(cat.name,
@@ -486,7 +345,7 @@ class _PromoStrip extends StatelessWidget {
             width: 115,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: color.withValues(alpha: 0.2)),
               boxShadow: [BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 3))],
@@ -573,17 +432,57 @@ class _BannerCarousel extends StatelessWidget {
 
 // ── SERVICES GRID ──────────────────────────────────────────────────────────
 class _ServicesGrid extends StatelessWidget {
-  const _ServicesGrid();
-
   @override
   Widget build(BuildContext context) {
     final services = [
-      {'icon': '🎬', 'title': 'Movies',   'sub': 'Book tickets instantly', 'color': 0xFFE91E63, 'route': '/movies',   'badge': 'LIVE'},
-      {'icon': '🏨', 'title': 'Hotels',   'sub': '10,000+ hotels',         'color': 0xFF7C4DFF, 'route': '/hotels',   'badge': ''},
-      {'icon': '✈️', 'title': 'Travel',   'sub': 'Flights & hotels',       'color': 0xFFFF9800, 'route': '/flights',  'badge': 'NEW'},
-      {'icon': '🚕', 'title': 'Cab Ride', 'sub': 'Safe & fast rides',      'color': 0xFF2196F3, 'route': '/rides',    'badge': ''},
-      {'icon': '🛒', 'title': 'Grocery',  'sub': '10 min delivery',        'color': 0xFF009688, 'route': '/category/grocery', 'badge': 'FAST'},
-      {'icon': '🎭', 'title': 'Leisure',  'sub': 'Spa, events & more',     'color': 0xFF00BCD4, 'route': '/category/leisure', 'badge': ''},
+      {
+        'icon': '🎬',
+        'title': 'Movies',
+        'sub': 'Book tickets instantly',
+        'color': 0xFFE91E63,
+        'route': '/category/movies',
+        'badge': '',
+      },
+      {
+        'icon': '🏨',
+        'title': 'Hotels',
+        'sub': '10,000+ hotels',
+        'color': 0xFF7C4DFF,
+        'route': '/category/hotels',
+        'badge': '',
+      },
+      {
+        'icon': '✈️',
+        'title': 'Travel',
+        'sub': 'Flights & trains',
+        'color': 0xFFFF9800,
+        'route': '/category/travel',
+        'badge': '',
+      },
+      {
+        'icon': '🚕',
+        'title': 'Cab Ride',
+        'sub': 'Safe & fast rides',
+        'color': 0xFF2196F3,
+        'route': '/category/ride',
+        'badge': '',
+      },
+      {
+        'icon': '🛒',
+        'title': 'Grocery',
+        'sub': '10 min delivery',
+        'color': 0xFF009688,
+        'route': '/category/grocery',
+        'badge': 'NEW',
+      },
+      {
+        'icon': '🎭',
+        'title': 'Leisure',
+        'sub': 'Spa, events & more',
+        'color': 0xFF00BCD4,
+        'route': '/category/leisure',
+        'badge': '',
+      },
     ];
 
     return Padding(
@@ -596,12 +495,13 @@ class _ServicesGrid extends StatelessWidget {
         itemBuilder: (_, i) {
           final s = services[i];
           final color = Color(s['color'] as int);
-          final badge = s['badge'] as String;
+          // FIX 2: null-safe fallback for missing 'badge' key
+          final badge = (s['badge'] ?? '') as String;
           return GestureDetector(
             onTap: () => context.push(s['route'] as String),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4))],
               ),
@@ -722,7 +622,7 @@ class _TopRatedRow extends StatelessWidget {
               width: 148,
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
               ),
@@ -780,7 +680,7 @@ class _RestaurantCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 16, offset: const Offset(0, 6))],
         ),

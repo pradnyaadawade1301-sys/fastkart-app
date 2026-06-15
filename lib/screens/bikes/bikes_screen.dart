@@ -3,25 +3,23 @@ import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 
 class BikeShareModel {
-  final String id, type, imageUrl;
+  final String id, type, assetPath;
   final int pricePerHour;
   final double distance;
   final bool isAvailable;
   final String qrCode;
 
   const BikeShareModel({
-    required this.id, required this.type, required this.imageUrl,
+    required this.id, required this.type, required this.assetPath,
     required this.pricePerHour, required this.distance,
     required this.isAvailable, required this.qrCode,
   });
 }
 
 List<BikeShareModel> _mockBikes() => [
-  const BikeShareModel(id:'b1', type:'Electric Scooter', imageUrl:'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=300&h=200&fit=crop', pricePerHour:40, distance:0.3, isAvailable:true, qrCode:'FK-SC-001'),
-  const BikeShareModel(id:'b2', type:'City Bike', imageUrl:'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=300&h=200&fit=crop', pricePerHour:25, distance:0.5, isAvailable:true, qrCode:'FK-CB-002'),
-  const BikeShareModel(id:'b3', type:'Electric Scooter', imageUrl:'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=300&h=200&fit=crop', pricePerHour:40, distance:0.8, isAvailable:false, qrCode:'FK-SC-003'),
-  const BikeShareModel(id:'b4', type:'Mountain Bike', imageUrl:'https://images.unsplash.com/photo-1576435728678-68d0fbf94946?w=300&h=200&fit=crop', pricePerHour:35, distance:1.2, isAvailable:true, qrCode:'FK-MB-004'),
-  const BikeShareModel(id:'b5', type:'Electric Scooter', imageUrl:'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=300&h=200&fit=crop', pricePerHour:40, distance:0.2, isAvailable:true, qrCode:'FK-SC-005'),
+  const BikeShareModel(id:'b1', type:'Electric Scooter', assetPath:'assets/images/electric_scooter.jpg', pricePerHour:40, distance:0.3, isAvailable:true, qrCode:'FK-SC-001'),
+  const BikeShareModel(id:'b2', type:'City Bike', assetPath:'assets/images/city_bike.jpg', pricePerHour:25, distance:0.5, isAvailable:true, qrCode:'FK-CB-002'),
+  const BikeShareModel(id:'b4', type:'Mountain Bike', assetPath:'assets/images/mountain_bike.jpg', pricePerHour:35, distance:1.2, isAvailable:true, qrCode:'FK-MB-004'),
 ];
 
 class BikeScreen extends StatefulWidget {
@@ -122,7 +120,7 @@ class _BikeScreenState extends State<BikeScreen> {
               child: Row(children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
-                  child: Image.network(b.imageUrl, width: 100, height: 90, fit: BoxFit.cover,
+                  child: Image.asset(b.assetPath, width: 100, height: 90, fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(width: 100, height: 90,
                         color: AppColors.divider, child: const Icon(Icons.electric_scooter_rounded, size: 40))),
                 ),

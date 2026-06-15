@@ -39,7 +39,7 @@ class _GroceryScreenState extends State<GroceryScreen>
   static const _tabFilters = ['All', 'Vegetables', 'Fruits', 'Dairy', 'Staples'];
   String _activeFilter = 'All';
 
-  // qty map
+  // qty map — default 0 for all items
   final Map<String, int> _qty = {};
 
   int get _cartCount => _qty.values.fold(0, (s, v) => s + v);
@@ -311,15 +311,10 @@ class _GroceryScreenState extends State<GroceryScreen>
             SizedBox(
               width: double.infinity, height: 52,
               child: ElevatedButton(
+                // ── CHANGE 2: Place Order opens user details form ──
                 onPressed: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: const Text('🛒 Order placed! Arriving in 10 min'),
-                    backgroundColor: _headerColor,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ));
-                  setState(() => _qty.clear());
+                  _showUserDetailsForm();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _headerColor,
@@ -331,6 +326,187 @@ class _GroceryScreenState extends State<GroceryScreen>
             ),
           ]),
         ),
+      ),
+    );
+  }
+
+  // ── User Details Form ──────────────────────────────────────────────────────
+  void _showUserDetailsForm() {
+    final nameCtrl    = TextEditingController();
+    final phoneCtrl   = TextEditingController();
+    final addressCtrl = TextEditingController();
+    final pinCtrl     = TextEditingController();
+    final formKey     = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              // Header
+              Row(children: [
+                Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(color: _headerColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.person_rounded, color: _headerColor, size: 20),
+                ),
+                const SizedBox(width: 10),
+                const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Delivery Details', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                  Text('Please fill your delivery details', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                ]),
+                const Spacer(),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+              ]),
+              const SizedBox(height: 20),
+
+              // Name field
+              _buildTextField(
+                controller: nameCtrl,
+                label: 'Full Name',
+                hint: 'Enter your full name',
+                icon: Icons.person_outline_rounded,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                keyboardType: TextInputType.name,
+              ),
+              const SizedBox(height: 14),
+
+              // Phone field
+              _buildTextField(
+                controller: phoneCtrl,
+                label: 'Mobile Number',
+                hint: '10 digit number',
+                icon: Icons.phone_outlined,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Phone number is required';
+                  if (v.trim().length != 10) return 'Enter a valid 10-digit number';
+                  return null;
+                },
+                keyboardType: TextInputType.phone,
+                maxLength: 10,
+              ),
+              const SizedBox(height: 14),
+
+              // Address field
+              _buildTextField(
+                controller: addressCtrl,
+                label: 'Delivery Address',
+                hint: 'House/flat no., street, area',
+                icon: Icons.home_outlined,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Address is required' : null,
+                maxLines: 2,
+              ),
+              const SizedBox(height: 14),
+
+              // PIN code field
+              _buildTextField(
+                controller: pinCtrl,
+                label: 'PIN Code',
+                hint: '6-digit PIN code',
+                icon: Icons.location_on_outlined,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'PIN code is required';
+                  if (v.trim().length != 6) return 'Enter a valid 6-digit PIN';
+                  return null;
+                },
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+              ),
+              const SizedBox(height: 24),
+
+              // Confirm Order button
+              SizedBox(
+                width: double.infinity, height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('✅ Order confirmed! Delivering to ${nameCtrl.text} in 10 mins'),
+                        backgroundColor: const Color(0xFF2E7D32),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        duration: const Duration(seconds: 3),
+                      ));
+                      setState(() => _qty.clear());
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _headerColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Confirm Order', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    String? Function(String?)? validator,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    int? maxLength,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      maxLength: maxLength,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, size: 20, color: _headerColor),
+        filled: true,
+        fillColor: const Color(0xFFF9F9F9),
+        counterText: '',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _headerColor, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        labelStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        hintStyle: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
       ),
     );
   }
@@ -359,7 +535,6 @@ class _GroceryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // filter chips for sub-filtering within tab
     final subFilters = <String>['All'];
     for (final i in _items) {
       final f = i['filter'] as String;
@@ -405,6 +580,7 @@ class _GroceryTab extends StatelessWidget {
         // Item cards
         ..._items.map((item) => _GroceryCard(
           item: item,
+          // ── CHANGE 1: default qty is 0 (from map, unset = 0) ──
           qty: qty[item['id'] as String] ?? 0,
           onAdd: () => onAdd(item['id'] as String),
           onRemove: () => onRemove(item['id'] as String),
@@ -453,7 +629,7 @@ class _FilterChipsState extends State<_FilterChips> {
   }
 }
 
-// ─── GROCERY CARD (leisure style) ─────────────────────────────────────────────
+// ─── GROCERY CARD ─────────────────────────────────────────────────────────────
 
 class _GroceryCard extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -557,53 +733,42 @@ class _GroceryCard extends StatelessWidget {
                 ]),
                 const Text('per person', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
               ]),
-              qty == 0
-                  ? GestureDetector(
-                      onTap: onAdd,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF00897B),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [BoxShadow(color: const Color(0xFF00897B).withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))],
-                        ),
-                        child: const Text('Book Now', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+              // ── CHANGE 1: Hamesha - 0 + counter dikhao (Book Now button hataaya) ──
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00897B),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  GestureDetector(
+                    onTap: onRemove,
+                    child: Container(
+                      width: 36, height: 40,
+                      decoration: const BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
                       ),
-                    )
-                  : Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00897B),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        GestureDetector(
-                          onTap: onRemove,
-                          child: Container(
-                            width: 36, height: 40,
-                            decoration: const BoxDecoration(
-                              color: Colors.white24,
-                              borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
-                            ),
-                            child: const Icon(Icons.remove, size: 18, color: Colors.white),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Text('$qty', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                        ),
-                        GestureDetector(
-                          onTap: onAdd,
-                          child: Container(
-                            width: 36, height: 40,
-                            decoration: const BoxDecoration(
-                              color: Colors.white24,
-                              borderRadius: BorderRadius.horizontal(right: Radius.circular(12)),
-                            ),
-                            child: const Icon(Icons.add, size: 18, color: Colors.white),
-                          ),
-                        ),
-                      ]),
+                      child: const Icon(Icons.remove, size: 18, color: Colors.white),
                     ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    // Shows 0 by default, increments on +
+                    child: Text('$qty', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                  ),
+                  GestureDetector(
+                    onTap: onAdd,
+                    child: Container(
+                      width: 36, height: 40,
+                      decoration: const BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.horizontal(right: Radius.circular(12)),
+                      ),
+                      child: const Icon(Icons.add, size: 18, color: Colors.white),
+                    ),
+                  ),
+                ]),
+              ),
             ]),
           ]),
         ),

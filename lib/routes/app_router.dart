@@ -294,9 +294,11 @@ class _PaymentMethodsScreenState extends State<_PaymentMethodsScreen> {
             const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
           ],
           onSelected: (v) {
-            if (v == 'default') setState(() { for (var x in _methods) {
+            if (v == 'default') {
+              setState(() { for (var x in _methods) {
               x['isDefault'] = false;
             } m['isDefault'] = true; });
+            }
             if (v == 'delete') setState(() => _methods.remove(m));
           },
         ),

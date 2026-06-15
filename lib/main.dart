@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'constants/app_colors.dart';
+import 'constants/app_theme.dart';
 import 'providers/providers.dart';
 import 'providers/favourites_provider.dart';
 import 'providers/theme_provider.dart';
@@ -33,17 +33,8 @@ class FastKartApp extends StatelessWidget {
             title: 'FastKart',
             debugShowCheckedModeBanner: false,
             themeMode: themeMode,
-            theme: ThemeData(
-              colorSchemeSeed: AppColors.primary,
-              useMaterial3: true,
-              fontFamily: 'Poppins',
-            ),
-            darkTheme: ThemeData(
-              colorSchemeSeed: AppColors.primary,
-              brightness: Brightness.dark,
-              useMaterial3: true,
-              fontFamily: 'Poppins',
-            ),
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
             routerConfig: AppRouter.router,
           );
         },

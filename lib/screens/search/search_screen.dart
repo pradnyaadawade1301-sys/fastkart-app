@@ -86,9 +86,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final results = _results;
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      // bg handled by theme
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // bg handled by theme
         elevation: 0,
         titleSpacing: 0,
         leading: IconButton(
@@ -131,7 +131,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(20),
+              color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20),
               border: Border.all(color: AppColors.border),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -154,7 +154,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(14),
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6)]),
             child: Row(children: [
               Text(t['icon']!, style: const TextStyle(fontSize: 22)),
@@ -254,7 +254,7 @@ class _ResultTile extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(14),
             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)]),
         child: Row(children: [
           result.type == 'category'

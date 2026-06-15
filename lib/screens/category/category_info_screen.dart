@@ -95,7 +95,7 @@ class _CategoryInfoScreenState extends State<CategoryInfoScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 40), // FIX: was 50
                   Text(config['emoji'] as String,
                       style: const TextStyle(fontSize: 52)),
                   const SizedBox(height: 6),
@@ -106,7 +106,7 @@ class _CategoryInfoScreenState extends State<CategoryInfoScreen> {
                           fontWeight: FontWeight.w900)),
                   Text(config['subtitle'] as String,
                       style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 4), // FIX: was 14
                   // ── Tabs inside app bar ───────────────────────────────────
                   SizedBox(
                     height: 36,
@@ -578,7 +578,6 @@ class _CategoryInfoScreenState extends State<CategoryInfoScreen> {
         {'value': '4.7⭐', 'label': 'Rating'},
       ],
       'services': [
-        // ── Health ──────────────────────────────────────────────────────
         {
           'icon': '👨‍⚕️', 'title': 'Doctor Consultation',
           'sub': '200+ specialist doctors',
@@ -627,7 +626,6 @@ class _CategoryInfoScreenState extends State<CategoryInfoScreen> {
           'price': '₹199', 'mrp': '₹349',
           'tags': 'Free eye test with frames purchase',
         },
-        // ── Travel ──────────────────────────────────────────────────────
         {
           'icon': '🚂', 'title': 'Train Booking (IRCTC)',
           'sub': 'IRCTC trains across India',
@@ -676,7 +674,6 @@ class _CategoryInfoScreenState extends State<CategoryInfoScreen> {
           'price': '₹4999', 'mrp': '₹7999',
           'tags': 'Hotels + Flights + Sightseeing',
         },
-        // ── Education ───────────────────────────────────────────────────
         {
           'icon': '💻', 'title': 'Online Courses',
           'sub': 'Learn from top instructors',

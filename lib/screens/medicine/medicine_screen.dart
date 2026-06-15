@@ -297,15 +297,15 @@ class _ServiceCard extends StatelessWidget {
                       style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                   const Divider(height: 24),
 
-                  // Naam
-                  const Text('Poora Naam',
+                  // Full Name
+                  const Text('Full Name',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: nameCtrl,
                     textCapitalization: TextCapitalization.words,
-                    decoration: _inputDeco('Apna naam likhein', Icons.person_outline_rounded, tagColor),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Naam zaruri hai' : null,
+                    decoration: _inputDeco('Enter your name', Icons.person_outline_rounded, tagColor),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
                   ),
                   const SizedBox(height: 14),
 
@@ -319,23 +319,23 @@ class _ServiceCard extends StatelessWidget {
                     maxLength: 10,
                     decoration: _inputDeco('10 digit mobile number', Icons.phone_outlined, tagColor),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Phone zaruri hai';
-                      if (v.trim().length < 10) return 'Sahi number daalo';
+                      if (v == null || v.trim().isEmpty) return 'Phone number is required';
+                      if (v.trim().length < 10) return 'Enter a valid number';
                       return null;
                     },
                   ),
                   const SizedBox(height: 14),
 
-                  // Umar
-                  const Text('Umar (Age)',
+                  // Age
+                  const Text('Age',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: ageCtrl,
                     keyboardType: TextInputType.number,
                     maxLength: 3,
-                    decoration: _inputDeco('Apni umar likhein', Icons.cake_outlined, tagColor),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Umar zaruri hai' : null,
+                    decoration: _inputDeco('Enter your age', Icons.cake_outlined, tagColor),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Age is required' : null,
                   ),
                   const SizedBox(height: 14),
 
@@ -411,17 +411,17 @@ class _ServiceCard extends StatelessWidget {
                         if (!formKey.currentState!.validate()) return;
                         if (selectedDate.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Date select karo'), behavior: SnackBarBehavior.floating));
+                            const SnackBar(content: Text('Please select a date'), behavior: SnackBarBehavior.floating));
                           return;
                         }
                         if (selectedTime.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Time slot select karo'), behavior: SnackBarBehavior.floating));
+                            const SnackBar(content: Text('Please select a time slot'), behavior: SnackBarBehavior.floating));
                           return;
                         }
                         Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('✅ ${data['name']} — $selectedDate $selectedTime ke liye book ho gaya!'),
+                          content: Text('✅ ${data['name']} — Booked for $selectedDate $selectedTime!'),
                           backgroundColor: tagColor,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -432,7 +432,7 @@ class _ServiceCard extends StatelessWidget {
                         backgroundColor: const Color(0xFF455A64),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text('Appointment Confirm Karo →',
+                      child: const Text('Confirm Appointment →',
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
                     ),
                   ),
@@ -464,8 +464,8 @@ class _ServiceCard extends StatelessWidget {
       filled: true,
       fillColor: const Color(0xFFF2F2F7),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.border)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.border)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: color, width: 1.5)),
       errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.error)),
       counterText: '',

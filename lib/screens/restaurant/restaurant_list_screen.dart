@@ -139,20 +139,20 @@ class _Card extends StatelessWidget {
                 ]),
                 const SizedBox(height: 4),
                 const Text(
-                  'Delivery ki details bharo',
+                  'Fill in delivery details',
                   style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
 
-                // Naam
-                const Text('Naam',
+                // Name
+                const Text('Name',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: nameController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: _inputDecoration('Apna naam likhein', Icons.person_outline_rounded),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Naam zaruri hai' : null,
+                  decoration: _inputDecoration('Enter your name', Icons.person_outline_rounded),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
                 ),
                 const SizedBox(height: 14),
 
@@ -166,8 +166,8 @@ class _Card extends StatelessWidget {
                   maxLength: 10,
                   decoration: _inputDecoration('10 digit mobile number', Icons.phone_outlined),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Phone number zaruri hai';
-                    if (v.trim().length < 10) return 'Sahi phone number daalo';
+                    if (v == null || v.trim().isEmpty) return 'Phone number is required';
+                    if (v.trim().length < 10) return 'Enter a valid phone number';
                     return null;
                   },
                 ),
@@ -181,8 +181,8 @@ class _Card extends StatelessWidget {
                   controller: addressController,
                   maxLines: 2,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: _inputDecoration('Ghar ka pura address likhein', Icons.location_on_outlined),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Address zaruri hai' : null,
+                  decoration: _inputDecoration('Enter your complete address', Icons.location_on_outlined),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Address is required' : null,
                 ),
                 const SizedBox(height: 14),
 
@@ -194,7 +194,7 @@ class _Card extends StatelessWidget {
                   controller: noteController,
                   maxLines: 2,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: _inputDecoration('Koi khaas instruction? (e.g. kam mirch)', Icons.note_outlined),
+                  decoration: _inputDecoration('Any special instruction? (e.g. less spice)', Icons.note_outlined),
                 ),
                 const SizedBox(height: 24),
 
@@ -215,7 +215,7 @@ class _Card extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12)),
                     ),
                     child: const Text(
-                      'Order Confirm Karo →',
+                      'Confirm Order →',
                       style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -241,11 +241,11 @@ class _Card extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: AppColors.border),
+        borderSide: const BorderSide(color: AppColors.border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: AppColors.border),
+        borderSide: const BorderSide(color: AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),

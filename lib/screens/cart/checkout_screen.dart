@@ -375,10 +375,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _placeOrder(CartProvider cart) async {
     setState(() => _placing = true);
-    final auth = context.read<AuthProvider>();
+
     final fullAddress = '${_addressCtrl.text}, ${_cityCtrl.text} - ${_pincodeCtrl.text}';
 
-    // Convert CartItems to OrderItemModel
+    // CartItems → OrderItemModel
     final orderItems = cart.items.map((ci) => OrderItemModel(
       id: ci.food.id,
       name: ci.food.name,
@@ -387,51 +387,94 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       price: ci.food.price,
     )).toList();
 
-    final order = await context.read<OrderProvider>().placeOrder(
-      restaurantId: cart.restaurantId ?? '',
-      restaurantName: cart.restaurantName ?? 'Restaurant',
-      restaurantImage: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop',
-      items: orderItems,
-      subtotal: cart.subtotal,
-      deliveryFee: cart.deliveryFee,
-      discount: cart.discount,
-      total: cart.total,
-      deliveryAddress: DeliveryAddress(label: 'Home', fullAddress: fullAddress),
-    );
+    // Payment method map karo
+    PaymentMethod pm = PaymentMethod.cash;
+    if (_payment == 'UPI') pm = PaymentMethod.upi;
+    if (_payment == 'Wallet') pm = PaymentMethod.wallet;
+    if (_payment == 'Card') pm = PaymentMethod.card;
+
+    Order? order;
+    try {
+      order = await context.read<OrderProvider>().placeOrder(
+        restaurantId: cart.restaurantId ?? '',
+        restaurantName: cart.restaurantName ?? 'Restaurant',
+        restaurantImage: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop',
+        items: orderItems,
+        subtotal: cart.subtotal,
+        deliveryFee: cart.deliveryFee,
+        discount: cart.discount,
+        total: cart.total,
+        deliveryAddress: DeliveryAddress(label: 'Home', fullAddress: fullAddress),
+        paymentMethod: pm,
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _placing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Order place nahi hua: $e'),
+              backgroundColor: AppColors.error));
+      }
+      return;
+    }
 
     cart.clear();
-    if (mounted) {
-      setState(() => _placing = false);
-      // Show success dialog
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 64),
-            const SizedBox(height: 16),
-            const Text('Order Placed!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 8),
-            Text('Order #${order!.id.substring(order.id.length > 6 ? order.id.length - 6 : 0)}',
-                style: const TextStyle(color: AppColors.textSecondary)),
-            const SizedBox(height: 4),
-            Text('Paid via $_payment', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-            const SizedBox(height: 16),
-            SizedBox(width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () { Navigator.pop(context); context.go('/tracking/${order.id}'); },
-                child: const Text('Track Order', style: TextStyle(fontWeight: FontWeight.w700)),
-              ),
-            ),
-            TextButton(
-              onPressed: () { Navigator.pop(context); context.go('/home'); },
-              child: const Text('Back to Home'),
-            ),
-          ]),
+
+    if (!mounted) return;
+    setState(() => _placing = false);
+
+    if (order == null) {
+      // Backend se connect nahi hua — phir bhi success dikhaao (mock fallback)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Backend offline — order locally saved'),
+          backgroundColor: AppColors.accent,
         ),
       );
+      context.go('/orders');
+      return;
     }
+
+    // Success dialog
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 64),
+          const SizedBox(height: 16),
+          const Text('Order Placed! 🎉',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 8),
+          Text(
+            'Order #${(order?.id ?? '').length > 6 ? (order?.id ?? '').substring((order?.id ?? '').length - 6) : (order?.id ?? '')}',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 4),
+          Text('Paid via $_payment',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.go('/tracking/${order!.id}');
+              },
+              child: const Text('Track Order',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/home');
+            },
+            child: const Text('Back to Home'),
+          ),
+        ]),
+      ),
+    );
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────

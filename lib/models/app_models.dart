@@ -336,7 +336,15 @@ class Order {
   String get statusLabel => status.label;
   bool get isActive      => status.isActive;
 
-  Order copyWith({OrderStatus? status, PaymentStatus? paymentStatus}) => Order(
+  Order copyWith({
+    OrderStatus? status,
+    PaymentStatus? paymentStatus,
+    String? driverName,
+    String? driverPhone,
+    String? driverImage,
+    double? driverLat,
+    double? driverLng,
+  }) => Order(
         id: id,
         restaurantId: restaurantId,
         restaurantName: restaurantName,
@@ -353,11 +361,11 @@ class Order {
         deliveryAddress: deliveryAddress,
         createdAt: createdAt,
         estimatedDelivery: estimatedDelivery,
-        driverName: driverName,
-        driverPhone: driverPhone,
-        driverImage: driverImage,
-        driverLat: driverLat,
-        driverLng: driverLng,
+        driverName: driverName ?? this.driverName,
+        driverPhone: driverPhone ?? this.driverPhone,
+        driverImage: driverImage ?? this.driverImage,
+        driverLat: driverLat ?? this.driverLat,
+        driverLng: driverLng ?? this.driverLng,
         paymentMethod: paymentMethod,
         paymentStatus: paymentStatus ?? this.paymentStatus,
         otp: otp,

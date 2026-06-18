@@ -1,6 +1,7 @@
 // lib/screens/splash_screen.dart
 import 'package:flutter/material.dart';
-import 'auth/sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -84,6 +85,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startAnimations() async {
+    // ✅ FIX: Pehle animations chalao, phir auto-login check karo
     await Future.delayed(const Duration(milliseconds: 200));
     _badgeCtrl.forward();
     await Future.delayed(const Duration(milliseconds: 200));
@@ -94,6 +96,19 @@ class _SplashScreenState extends State<SplashScreen>
     _gridCtrl.forward();
     await Future.delayed(const Duration(milliseconds: 300));
     _btnsCtrl.forward();
+
+    // ✅ Animations complete hone ke baad check karo
+    await Future.delayed(const Duration(milliseconds: 500));
+    await _checkAutoLogin();
+  }
+
+  // ✅ Auto-login check — already logged in toh seedha home
+  Future<void> _checkAutoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    if (isLoggedIn && mounted) {
+      context.go('/home');
+    }
   }
 
   @override
@@ -107,21 +122,9 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
+  // ✅ FIX: Navigator.push hata diya, go_router ka context.go use kiya
   void _goToSignIn() {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, animation, __) => const SignInScreen(),
-        transitionsBuilder: (_, animation, __, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-          child: child,
-        ),
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-    );
+    context.go('/login');
   }
 
   @override
@@ -275,46 +278,24 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _buildButtons() {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.explore_rounded, color: Colors.white, size: 18),
-            label: const Text('Explore FastKart',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: Colors.white54, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            ),
-          ),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _goToSignIn,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFFC2500A),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          elevation: 0,
         ),
-        const SizedBox(height: 10),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _goToSignIn,   // ← FIX: yahan navigate hoga
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFFC2500A),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-              elevation: 0,
-            ),
-            child: const Text('Sign In to Your Account',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-          ),
-        ),
-      ],
+        child: const Text('Sign In to Your Account',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+      ),
     );
   }
 }
 
-// ─────────────────────────────────────────────
-//  SERVICE TILE
-// ─────────────────────────────────────────────
 class _ServiceItem {
   final IconData icon;
   final String label;

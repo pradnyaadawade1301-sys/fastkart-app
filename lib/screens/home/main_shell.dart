@@ -14,7 +14,7 @@ class MainShell extends StatelessWidget {
     final loc = GoRouterState.of(context).matchedLocation;
     if (loc.startsWith('/search'))    return 1;
     if (loc.startsWith('/favorites')) return 2;
-    if (loc.startsWith('/profile'))   return 3; // ✅ fixed: was 4
+    if (loc.startsWith('/profile'))   return 3;
     return 0;
   }
 
@@ -52,7 +52,7 @@ class MainShell extends StatelessWidget {
                     label: 'Search',
                     active: idx == 1,
                     onTap: () => context.go('/search')),
-                // Cart FAB
+                // Cart FAB (center)
                 GestureDetector(
                   onTap: () => context.go('/cart'),
                   child: badges.Badge(
@@ -97,7 +97,7 @@ class MainShell extends StatelessWidget {
                 _NavItem(
                     icon: Icons.person_rounded,
                     label: 'Profile',
-                    active: idx == 3, // ✅ fixed: was 4
+                    active: idx == 3,
                     onTap: () => context.go('/profile')),
               ],
             ),

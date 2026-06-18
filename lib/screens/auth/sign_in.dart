@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -67,6 +68,14 @@ class _SignInScreenState extends State<SignInScreen>
       if (currentUser != null && _nameCtrl.text.trim().isNotEmpty) {
         auth.updateUser(currentUser.copyWith(name: _nameCtrl.text.trim()));
       }
+
+      // ✅ Login state save karo — dobara nahi maangega
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+      await prefs.setString('user_name', _nameCtrl.text.trim());
+      await prefs.setString('user_phone', _phoneCtrl.text.trim());
+
+      if (!mounted) return;
       context.go('/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

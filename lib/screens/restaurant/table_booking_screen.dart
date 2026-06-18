@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/app_colors.dart';
+import '../../services/history_service.dart';
+import '../../models/history_item.dart';
 
 class TableBookingScreen extends StatefulWidget {
   final String restaurantId;
@@ -17,6 +19,9 @@ class _TableBookingScreenState extends State<TableBookingScreen> {
   int? _selectedTable;
   bool _confirmed = false;
 
+  String _paymentMethod = 'Pay at Restaurant';
+  final _paymentDetailCtrl = TextEditingController();
+
   final List<String> _times = ['12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM',
       '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM'];
 
@@ -30,8 +35,25 @@ class _TableBookingScreenState extends State<TableBookingScreen> {
   ];
 
   @override
+  void dispose() {
+    _paymentDetailCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (_confirmed) return _ConfirmedView(date: _date, time: _selectedTime!, guests: _guests);
+    if (_confirmed) {
+      return _ConfirmedView(
+        date: _date,
+        time: _selectedTime!,
+        guests: _guests,
+        paymentMethod: _paymentMethod,
+      );
+    }
+
+    final paymentReady = _paymentMethod == 'Pay at Restaurant' ||
+        _paymentDetailCtrl.text.trim().isNotEmpty;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
@@ -174,11 +196,85 @@ class _TableBookingScreenState extends State<TableBookingScreen> {
             );
           }).toList(),
         ),
+        const SizedBox(height: 20),
+
+        // Payment method
+        const _SectionLabel(label: '5. Payment Method'),
+        Wrap(spacing: 8, runSpacing: 8, children: ['Pay at Restaurant', 'UPI', 'Card'].map((m) {
+          final isSelected = _paymentMethod == m;
+          return GestureDetector(
+            onTap: () => setState(() {
+              _paymentMethod = m;
+              _paymentDetailCtrl.clear();
+            }),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(
+                  m == 'Pay at Restaurant'
+                      ? Icons.storefront_rounded
+                      : m == 'UPI'
+                          ? Icons.qr_code_rounded
+                          : Icons.credit_card_rounded,
+                  size: 16,
+                  color: isSelected ? Colors.black87 : AppColors.textSecondary,
+                ),
+                const SizedBox(width: 6),
+                Text(m, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
+                    color: isSelected ? Colors.black87 : AppColors.textPrimary)),
+              ]),
+            ),
+          );
+        }).toList()),
+
+        if (_paymentMethod != 'Pay at Restaurant') ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)]),
+            child: TextField(
+              controller: _paymentDetailCtrl,
+              onChanged: (_) => setState(() {}),
+              keyboardType: _paymentMethod == 'UPI' ? TextInputType.text : TextInputType.number,
+              decoration: InputDecoration(
+                labelText: _paymentMethod == 'UPI' ? 'UPI ID' : 'Card Number',
+                hintText: _paymentMethod == 'UPI' ? 'yourname@upi' : '1234 5678 9012 3456',
+                labelStyle: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
 
         ElevatedButton(
-          onPressed: (_selectedTime != null && _selectedTable != null)
-              ? () => setState(() => _confirmed = true) : null,
+          onPressed: (_selectedTime != null && _selectedTable != null && paymentReady)
+              ? () {
+                  // ── Saved tab mein save karo ──────────────────────────────
+                  final tableName = _tables.firstWhere((t) => t['id'] == _selectedTable)['name'] as String;
+                  HistoryService.instance.saveItem(
+                    HistoryService.makeMore(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      title: 'Table Booking — Punjabi Tadka',
+                      subtitle: '${_date.day}/${_date.month}/${_date.year} · $_selectedTime',
+                      description: '$tableName · $_guests guest${_guests == 1 ? '' : 's'} · $_paymentMethod',
+                      amount: 0,
+                      date: _date,
+                      status: HistoryStatus.confirmed,
+                    ),
+                  );
+                  setState(() => _confirmed = true);
+                }
+              : null,
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 52),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -226,7 +322,13 @@ class _ConfirmedView extends StatefulWidget {
   final DateTime date;
   final String time;
   final int guests;
-  const _ConfirmedView({required this.date, required this.time, required this.guests});
+  final String paymentMethod;
+  const _ConfirmedView({
+    required this.date,
+    required this.time,
+    required this.guests,
+    required this.paymentMethod,
+  });
   @override
   State<_ConfirmedView> createState() => _ConfirmedViewState();
 }
@@ -269,6 +371,7 @@ class _ConfirmedViewState extends State<_ConfirmedView> with SingleTickerProvide
               _BookingDetail('📅', 'Date', '${widget.date.day}/${widget.date.month}/${widget.date.year}'),
               _BookingDetail('🕐', 'Time', widget.time),
               _BookingDetail('👥', 'Guests', '${widget.guests} ${widget.guests == 1 ? 'person' : 'people'}'),
+              _BookingDetail('💳', 'Payment', widget.paymentMethod),
               _BookingDetail('🎫', 'Booking ID', '#TB${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'),
             ]),
           ),

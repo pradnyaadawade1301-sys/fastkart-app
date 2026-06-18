@@ -67,15 +67,15 @@ class AppRouter {
       return null;
     },
     routes: [
-      GoRoute(path: '/', builder: (_, __) => const SplashScreen()),
+      GoRoute(path: '/', builder: (BuildContext _, GoRouterState __) => const SplashScreen()),
 
       GoRoute(
         path: '/login',
-        builder: (_, __) => const LoginScreen(),
+        builder: (BuildContext _, GoRouterState __) => const LoginScreen(),
         routes: [
           GoRoute(
             path: 'otp',
-            builder: (context, state) {
+            builder: (BuildContext context, GoRouterState state) {
               final extra = state.extra as Map<String, dynamic>? ?? {};
               return OtpScreen(
                 phone: extra['phone'] as String? ?? '',
@@ -86,19 +86,19 @@ class AppRouter {
         ],
       ),
 
-      GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+      GoRoute(path: '/register', builder: (BuildContext _, GoRouterState __) => const RegisterScreen()),
 
       ShellRoute(
-        builder: (context, state, child) => MainShell(child: child),
+        builder: (BuildContext context, GoRouterState state, Widget child) => MainShell(child: child),
         routes: [
-          GoRoute(path: '/home',      builder: (_, __) => const HomeScreen()),
-          GoRoute(path: '/search',    builder: (_, __) => const SearchScreen()),
-          GoRoute(path: '/favorites', builder: (_, __) => const FavouriteScreen()),
-          GoRoute(path: '/profile',   builder: (_, __) => const ProfileScreen()),
-          GoRoute(path: '/orders',    builder: (_, __) => const OrdersScreen()),
+          GoRoute(path: '/home',      builder: (BuildContext _, GoRouterState __) => const HomeScreen()),
+          GoRoute(path: '/search',    builder: (BuildContext _, GoRouterState __) => const SearchScreen()),
+          GoRoute(path: '/favorites', builder: (BuildContext _, GoRouterState __) => const FavouriteScreen()),
+          GoRoute(path: '/profile',   builder: (BuildContext _, GoRouterState __) => const ProfileScreen()),
+          GoRoute(path: '/orders',    builder: (BuildContext _, GoRouterState __) => const OrdersScreen()),
           GoRoute(
             path: '/orders/:id',
-            builder: (context, state) =>
+            builder: (BuildContext context, GoRouterState state) =>
                 OrderDetailScreen(orderId: state.pathParameters['id'] ?? ''),
           ),
         ],
@@ -107,13 +107,13 @@ class AppRouter {
       // ✅ Grocery category directly opens GroceryScreen
       GoRoute(
         path: '/category/grocery',
-        builder: (_, __) => const GroceryScreen(),
+        builder: (BuildContext _, GoRouterState __) => const GroceryScreen(),
       ),
 
       // ✅ Leisure category directly opens LeisureScreen
       GoRoute(
         path: '/category/leisure',
-        builder: (context, state) {
+        builder: (BuildContext context, GoRouterState state) {
           final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
           return LeisureScreen(initialTab: tab);
         },
@@ -122,63 +122,63 @@ class AppRouter {
       // All other categories go to CategoryInfoScreen
       GoRoute(
         path: '/category/:id',
-        builder: (context, state) =>
+        builder: (BuildContext context, GoRouterState state) =>
             CategoryInfoScreen(category: state.pathParameters['id'] ?? 'food'),
       ),
 
       GoRoute(
         path: '/leisure',
-        builder: (context, state) {
+        builder: (BuildContext context, GoRouterState state) {
           final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '0') ?? 0;
           return LeisureScreen(initialTab: tab);
         },
       ),
 
-      GoRoute(path: '/movies',   builder: (_, __) => const MoviesScreen()),
-      GoRoute(path: '/hotels',   builder: (_, __) => const HotelsScreen()),
-      GoRoute(path: '/flights',  builder: (_, __) => const FlightsScreen()),
-      GoRoute(path: '/rides',    builder: (_, __) => const RidesScreen()),
-      GoRoute(path: '/grocery',  builder: (_, __) => const GroceryScreen()),
-      GoRoute(path: '/bikes',    builder: (_, __) => const BikeScreen()),
-      GoRoute(path: '/medicine', builder: (_, __) => const MedicineScreen()),
-      GoRoute(path: '/trains',   builder: (_, __) => const TrainsScreen()),
-      GoRoute(path: '/more',     builder: (_, __) => const MedicineScreen()),
+      GoRoute(path: '/movies',   builder: (BuildContext _, GoRouterState __) => const MoviesScreen()),
+      GoRoute(path: '/hotels',   builder: (BuildContext _, GoRouterState __) => const HotelsScreen()),
+      GoRoute(path: '/flights',  builder: (BuildContext _, GoRouterState __) => const FlightsScreen()),
+      GoRoute(path: '/rides',    builder: (BuildContext _, GoRouterState __) => const RidesScreen()),
+      GoRoute(path: '/grocery',  builder: (BuildContext _, GoRouterState __) => const GroceryScreen()),
+      GoRoute(path: '/bikes',    builder: (BuildContext _, GoRouterState __) => const BikeScreen()),
+      GoRoute(path: '/medicine', builder: (BuildContext _, GoRouterState __) => const MedicineScreen()),
+      GoRoute(path: '/trains',   builder: (BuildContext _, GoRouterState __) => const TrainsScreen()),
+      GoRoute(path: '/more',     builder: (BuildContext _, GoRouterState __) => const MedicineScreen()),
 
-      GoRoute(path: '/addresses',       builder: (_, __) => const AddressesScreen()),
-      GoRoute(path: '/edit-profile',    builder: (_, __) => const EditProfileScreen()),
-      GoRoute(path: '/payment-methods', builder: (_, __) => const _PaymentMethodsScreen()),
-      GoRoute(path: '/points',          builder: (_, __) => const _PointsScreen()),
-      GoRoute(path: '/vouchers',        builder: (_, __) => const VouchersScreen()),
+      GoRoute(path: '/addresses',       builder: (BuildContext _, GoRouterState __) => const AddressesScreen()),
+      GoRoute(path: '/edit-profile',    builder: (BuildContext _, GoRouterState __) => const EditProfileScreen()),
+      GoRoute(path: '/payment-methods', builder: (BuildContext _, GoRouterState __) => const _PaymentMethodsScreen()),
+      GoRoute(path: '/points',          builder: (BuildContext _, GoRouterState __) => const _PointsScreen()),
+      GoRoute(path: '/vouchers',        builder: (BuildContext _, GoRouterState __) => const VouchersScreen()),
 
-      GoRoute(path: '/restaurants', builder: (_, __) => const RestaurantListScreen()),
+      GoRoute(path: '/restaurants', builder: (BuildContext _, GoRouterState __) => const RestaurantListScreen()),
       GoRoute(
         path: '/restaurant/:id',
-        builder: (context, state) =>
+        builder: (BuildContext context, GoRouterState state) =>
             RestaurantDetailScreen(restaurantId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: '/food/:id',
-        builder: (context, state) =>
+        builder: (BuildContext context, GoRouterState state) =>
             FoodDetailScreen(foodId: state.pathParameters['id'] ?? ''),
       ),
 
-      GoRoute(path: '/cart',     builder: (_, __) => const CartScreen()),
-      GoRoute(path: '/checkout', builder: (_, __) => const CheckoutScreen()),
+      GoRoute(path: '/cart',     builder: (BuildContext _, GoRouterState __) => const CartScreen()),
+      GoRoute(path: '/checkout', builder: (BuildContext _, GoRouterState __) => const CheckoutScreen()),
 
-      GoRoute(path: '/wallet',        builder: (_, __) => const WalletScreen()),
-      GoRoute(path: '/offers',        builder: (_, __) => const OffersScreen()),
-      GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
+      GoRoute(path: '/wallet',        builder: (BuildContext _, GoRouterState __) => const WalletScreen()),
+      GoRoute(path: '/offers',        builder: (BuildContext _, GoRouterState __) => const OffersScreen()),
+      GoRoute(path: '/notifications', builder: (BuildContext _, GoRouterState __) => const NotificationsScreen()),
       GoRoute(
         path: '/chat',
-        builder: (context, state) =>
+        builder: (BuildContext context, GoRouterState state) =>
             ChatScreen(type: state.uri.queryParameters['type'] ?? 'support'),
       ),
       GoRoute(
         path: '/tracking/:id',
-        builder: (context, state) =>
+        builder: (BuildContext context, GoRouterState state) =>
             TrackingScreen(orderId: state.pathParameters['id'] ?? ''),
       ),
-      GoRoute(path: '/map', builder: (_, __) => const MapsScreen()),
+      GoRoute(path: '/map', builder: (BuildContext _, GoRouterState __) => const MapsScreen()),
     ],
 
     errorBuilder: (context, state) {

@@ -398,16 +398,16 @@ class MockData {
       ];
 
   static List<CategoryModel> categories() => const [
-        CategoryModel(id: 'food',     name: 'Food',     icon: '🍛',  colorValue: 0xFFFF6B35, route: '/restaurants'),      // ✅
-        CategoryModel(id: 'movies',   name: 'Movies',   icon: '🎬',  colorValue: 0xFFE91E63, route: '/movies'),            // ✅
-        CategoryModel(id: 'hotels',   name: 'Hotels',   icon: '🏨',  colorValue: 0xFF7C4DFF, route: '/hotels'),            // ✅
-        CategoryModel(id: 'leisure',  name: 'Leisure',  icon: '🎭',  colorValue: 0xFF00BCD4, route: '/leisure'),
-        CategoryModel(id: 'delivery', name: 'Delivery', icon: '🛵',  colorValue: 0xFF4CAF50, route: '/restaurants'),          // ✅ FIXED
-        CategoryModel(id: 'ride',     name: 'Ride',     icon: '🚕',  colorValue: 0xFF2196F3, route: '/rides'),             // ✅
-        CategoryModel(id: 'bike',     name: 'Bike',     icon: '🏍️', colorValue: 0xFF8BC34A, route: '/bikes'),             // ✅
-        CategoryModel(id: 'travel',   name: 'Travel',   icon: '✈️', colorValue: 0xFFFF9800, route: '/flights'),            // ✅
-        CategoryModel(id: 'grocery',  name: 'Grocery',  icon: '🛒',  colorValue: 0xFF009688, route: '/grocery'),  // ✅
-        CategoryModel(id: 'more',     name: 'More',     icon: '···', colorValue: 0xFF9E9E9E, route: '/category/more'),            // ✅ FIXED
+        CategoryModel(id: 'food',    name: 'Food',    icon: '🍛',  colorValue: 0xFFFF6B35, route: '/restaurants'),
+        CategoryModel(id: 'movies',  name: 'Movies',  icon: '🎬',  colorValue: 0xFFE91E63, route: '/movies'),
+        CategoryModel(id: 'hotels',  name: 'Hotels',  icon: '🏨',  colorValue: 0xFF7C4DFF, route: '/hotels'),
+        CategoryModel(id: 'leisure', name: 'Leisure', icon: '🎭',  colorValue: 0xFF00BCD4, route: '/leisure'),
+        // ✅ delivery removed
+        CategoryModel(id: 'ride',    name: 'Ride',    icon: '🚕',  colorValue: 0xFF2196F3, route: '/rides'),
+        CategoryModel(id: 'bike',    name: 'Bike',    icon: '🏍️', colorValue: 0xFF8BC34A, route: '/bikes'),
+        CategoryModel(id: 'travel',  name: 'Travel',  icon: '✈️', colorValue: 0xFFFF9800, route: '/flights'),
+        CategoryModel(id: 'grocery', name: 'Grocery', icon: '🛒',  colorValue: 0xFF009688, route: '/grocery'),
+        CategoryModel(id: 'more',    name: 'More',    icon: '···', colorValue: 0xFF9E9E9E, route: '/category/more'),
       ];
 
   static List<Restaurant> restaurants() => [

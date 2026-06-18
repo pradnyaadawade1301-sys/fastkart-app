@@ -239,7 +239,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 // ── SERVICES ──────────────────────────────────────────
                 SliverToBoxAdapter(child: _SectionHeader(title: 'Our Services 🇮🇳', onSeeAll: () {})),
                 const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                // FIX 1: Removed 'const' — _ServicesGrid uses context so cannot be const
                 SliverToBoxAdapter(child: _ServicesGrid()),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
@@ -291,28 +290,32 @@ class _CategoryGrid extends StatelessWidget {
       itemBuilder: (_, i) {
         final cat = cats[i];
         final color = Color(cat.colorValue);
-        return GestureDetector(
-          onTap: () => context.push(cat.route),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 54, height: 54,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [color.withValues(alpha: 0.25), color.withValues(alpha: 0.08)],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.push(cat.route),
+            borderRadius: BorderRadius.circular(14),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                width: 54, height: 54,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [color.withValues(alpha: 0.25), color.withValues(alpha: 0.08)],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 3))],
                 ),
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 3))],
+                child: Center(
+                  child: Text(cat.icon, style: const TextStyle(fontSize: 26)),
+                ),
               ),
-              child: Center(
-                child: Text(cat.icon, style: const TextStyle(fontSize: 26)),
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(cat.name,
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
-                maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
-          ]),
+              const SizedBox(height: 5),
+              Text(cat.name,
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                  maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+            ]),
+          ),
         );
       },
     );
@@ -431,6 +434,7 @@ class _BannerCarousel extends StatelessWidget {
 }
 
 // ── SERVICES GRID ──────────────────────────────────────────────────────────
+// ✅ FIX: Routes app_router.dart ke routes se match karti hain
 class _ServicesGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -440,7 +444,7 @@ class _ServicesGrid extends StatelessWidget {
         'title': 'Movies',
         'sub': 'Book tickets instantly',
         'color': 0xFFE91E63,
-        'route': '/category/movies',
+        'route': '/movies',       // ✅ /category/movies → /movies
         'badge': '',
       },
       {
@@ -448,7 +452,7 @@ class _ServicesGrid extends StatelessWidget {
         'title': 'Hotels',
         'sub': '10,000+ hotels',
         'color': 0xFF7C4DFF,
-        'route': '/category/hotels',
+        'route': '/hotels',       // ✅ /category/hotels → /hotels
         'badge': '',
       },
       {
@@ -456,7 +460,7 @@ class _ServicesGrid extends StatelessWidget {
         'title': 'Travel',
         'sub': 'Flights & trains',
         'color': 0xFFFF9800,
-        'route': '/category/travel',
+        'route': '/flights',      // ✅ /category/travel → /flights
         'badge': '',
       },
       {
@@ -464,7 +468,7 @@ class _ServicesGrid extends StatelessWidget {
         'title': 'Cab Ride',
         'sub': 'Safe & fast rides',
         'color': 0xFF2196F3,
-        'route': '/category/ride',
+        'route': '/rides',        // ✅ /category/ride → /rides
         'badge': '',
       },
       {
@@ -472,7 +476,7 @@ class _ServicesGrid extends StatelessWidget {
         'title': 'Grocery',
         'sub': '10 min delivery',
         'color': 0xFF009688,
-        'route': '/category/grocery',
+        'route': '/grocery',      // ✅ /category/grocery → /grocery
         'badge': 'NEW',
       },
       {
@@ -480,7 +484,7 @@ class _ServicesGrid extends StatelessWidget {
         'title': 'Leisure',
         'sub': 'Spa, events & more',
         'color': 0xFF00BCD4,
-        'route': '/category/leisure',
+        'route': '/leisure',      // ✅ /category/leisure → /leisure
         'badge': '',
       },
     ];
@@ -495,40 +499,43 @@ class _ServicesGrid extends StatelessWidget {
         itemBuilder: (_, i) {
           final s = services[i];
           final color = Color(s['color'] as int);
-          // FIX 2: null-safe fallback for missing 'badge' key
           final badge = (s['badge'] ?? '') as String;
-          return GestureDetector(
-            onTap: () => context.push(s['route'] as String),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4))],
-              ),
-              child: Stack(children: [
-                Positioned(bottom: -10, right: -10,
-                  child: Container(width: 60, height: 60, decoration: BoxDecoration(color: color.withValues(alpha: 0.08), shape: BoxShape.circle))),
-                Center(
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Container(
-                      width: 52, height: 52,
-                      decoration: BoxDecoration(gradient: LinearGradient(colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)]), borderRadius: BorderRadius.circular(16)),
-                      child: Center(child: Text(s['icon'] as String, style: const TextStyle(fontSize: 28))),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(s['title'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 2),
-                    Text(s['sub'] as String, style: TextStyle(fontSize: 9, color: color, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ]),
+          return Material(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            child: InkWell(
+              onTap: () => context.push(s['route'] as String),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4))],
                 ),
-                if (badge.isNotEmpty)
-                  Positioned(top: 8, right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
-                      child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900)),
-                    )),
-              ]),
+                child: Stack(children: [
+                  Positioned(bottom: -10, right: -10,
+                    child: Container(width: 60, height: 60, decoration: BoxDecoration(color: color.withValues(alpha: 0.08), shape: BoxShape.circle))),
+                  Center(
+                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Container(
+                        width: 52, height: 52,
+                        decoration: BoxDecoration(gradient: LinearGradient(colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)]), borderRadius: BorderRadius.circular(16)),
+                        child: Center(child: Text(s['icon'] as String, style: const TextStyle(fontSize: 28))),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(s['title'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 2),
+                      Text(s['sub'] as String, style: TextStyle(fontSize: 9, color: color, fontWeight: FontWeight.w600), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ]),
+                  ),
+                  if (badge.isNotEmpty)
+                    Positioned(top: 8, right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
+                        child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900)),
+                      )),
+                ]),
+              ),
             ),
           );
         },

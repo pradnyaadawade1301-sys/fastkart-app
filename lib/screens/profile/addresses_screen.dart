@@ -181,4 +181,4 @@ class _AddressCard extends StatelessWidget {
       ),
     );
   }
-}
+} // ← closing brace added

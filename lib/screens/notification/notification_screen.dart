@@ -101,7 +101,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
   void _onTap(_NotifItem n) {
     setState(() => n.isRead = true);
-    if (n.type == 'order') context.push('/orders');
+    // ✅ FIX: '/orders' ShellRoute ke andar hai, isliye `go` use kiya —
+    // `push` se duplicate ShellRoute instance (same navigatorKey wala)
+    // ban jaata tha, jo Navigator ke "!keyReservation.contains(key)"
+    // assertion crash ka exact cause tha.
+    if (n.type == 'order') context.go('/orders');
     if (n.type == 'ride') context.push('/rides');
     if (n.type == 'wallet') context.push('/wallet');
   }

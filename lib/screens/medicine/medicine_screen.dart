@@ -1,255 +1,104 @@
 // lib/screens/medicine/medicine_screen.dart
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../constants/app_colors.dart';
+import '../../services/history_service.dart';
+import '../../models/history_item.dart';
 
 const _moreServices = [
-  {'name':'Doctor Consultation',  'location':'200+ specialist doctors', 'rating':'4.9','reviews':'18k', 'price':299, 'originalPrice':499, 'tag':'24/7',       'tagColor':0xFFFF6F00, 'desc':'Video • Chat • In-clinic visits',    'duration':'Available today', 'icon':'🧑‍⚕️', 'filter':'Health'},
-  {'name':'Lab Tests at Home',    'location':'Home sample pickup',      'rating':'4.7','reviews':'9k',  'price':199, 'originalPrice':350, 'tag':'Home Visit', 'tagColor':0xFFE91E63, 'desc':'Blood • Urine • Full body checkup',  'duration':'Book by 8PM',     'icon':'🧪', 'filter':'Health'},
-  {'name':'Mental Wellness',      'location':'Licensed therapists',     'rating':'4.8','reviews':'5.2k','price':399, 'originalPrice':599, 'tag':'Popular',    'tagColor':0xFF7C4DFF, 'desc':'Therapy • Counseling • Meditation', 'duration':'Same day slots',  'icon':'🧠', 'filter':'Health'},
-  {'name':'Physiotherapy',        'location':'At-home or clinic',       'rating':'4.6','reviews':'3.1k','price':499, 'originalPrice':700, 'tag':'Expert',     'tagColor':0xFF00897B, 'desc':'Sports • Back pain • Rehab',        'duration':'45 min session',  'icon':'🦴', 'filter':'Health'},
-  {'name':'Train Booking',        'location':'All India routes',        'rating':'4.5','reviews':'22k', 'price':199, 'originalPrice':0,   'tag':'IRCTC',      'tagColor':0xFF1565C0, 'desc':'Sleeper • AC • Express trains',     'duration':'Instant confirm', 'icon':'🚆', 'filter':'Travel'},
-  {'name':'Bus Booking',          'location':'500+ operators',          'rating':'4.3','reviews':'11k', 'price':149, 'originalPrice':0,   'tag':'Popular',    'tagColor':0xFF2E7D32, 'desc':'AC • Sleeper • Volvo buses',        'duration':'Instant confirm', 'icon':'🚌', 'filter':'Travel'},
-  {'name':'Cab Rental',           'location':'Outstation & local',      'rating':'4.7','reviews':'8.4k','price':999, 'originalPrice':1400,'tag':'Best Value', 'tagColor':0xFFFF9800, 'desc':'Sedan • SUV • Tempo Traveller',    'duration':'Per day rental',  'icon':'🚗', 'filter':'Travel'},
-  {'name':'Online Tutoring',      'location':'Expert tutors',           'rating':'4.8','reviews':'6.7k','price':299, 'originalPrice':499, 'tag':'Live',       'tagColor':0xFF7C4DFF, 'desc':'Math • Science • English • Coding','duration':'60 min class',   'icon':'📚', 'filter':'Education'},
-  {'name':'Skill Courses',        'location':'50+ categories',          'rating':'4.6','reviews':'14k', 'price':499, 'originalPrice':999, 'tag':'50% OFF',    'tagColor':0xFFE91E63, 'desc':'Design • Finance • Marketing',     'duration':'Self-paced',      'icon':'🎓', 'filter':'Education'},
-  {'name':'Language Classes',     'location':'Native instructors',      'rating':'4.7','reviews':'3.8k','price':399, 'originalPrice':599, 'tag':'New',        'tagColor':0xFF00897B, 'desc':'English • French • Spanish • Hindi','duration':'45 min/session', 'icon':'🗣️', 'filter':'Education'},
+  {'name': 'Doctor Consultation', 'location': '200+ specialist doctors', 'rating': '4.9', 'reviews': '12k', 'price': 299.0, 'icon': Icons.medical_services_rounded, 'color': 0xFF4CAF50},
+  {'name': 'Lab Tests', 'location': 'Home sample collection', 'rating': '4.8', 'reviews': '8k', 'price': 199.0, 'icon': Icons.biotech_rounded, 'color': 0xFF2196F3},
+  {'name': 'Medicine Delivery', 'location': 'Delivered in 2 hours', 'rating': '4.7', 'reviews': '20k', 'price': 0.0, 'icon': Icons.local_pharmacy_rounded, 'color': 0xFFFF9800},
+  {'name': 'Health Packages', 'location': 'Full body checkup', 'rating': '4.9', 'reviews': '5k', 'price': 999.0, 'icon': Icons.favorite_rounded, 'color': 0xFFE91E63},
+  {'name': 'Mental Wellness', 'location': 'Therapy & counseling', 'rating': '4.8', 'reviews': '3k', 'price': 499.0, 'icon': Icons.psychology_rounded, 'color': 0xFF9C27B0},
+  {'name': 'Dental Care', 'location': '100+ dentists near you', 'rating': '4.6', 'reviews': '6k', 'price': 349.0, 'icon': Icons.mood_rounded, 'color': 0xFF00BCD4},
+  {'name': 'Eye Checkup', 'location': 'Vision tests & more', 'rating': '4.7', 'reviews': '4k', 'price': 249.0, 'icon': Icons.remove_red_eye_rounded, 'color': 0xFF3F51B5},
+  {'name': 'Physiotherapy', 'location': 'Home visit available', 'rating': '4.8', 'reviews': '2k', 'price': 599.0, 'icon': Icons.self_improvement_rounded, 'color': 0xFF795548},
 ];
+
+class _ServiceItem {
+  final String name, location, rating, reviews;
+  final double price;
+  final IconData icon;
+  final Color color;
+
+  const _ServiceItem({
+    required this.name, required this.location, required this.rating,
+    required this.reviews, required this.price,
+    required this.icon, required this.color,
+  });
+}
+
+final _services = _moreServices.map((m) => _ServiceItem(
+  name: m['name'] as String,
+  location: m['location'] as String,
+  rating: m['rating'] as String,
+  reviews: m['reviews'] as String,
+  price: m['price'] as double,
+  icon: m['icon'] as IconData,
+  color: Color(m['color'] as int),
+)).toList();
 
 class MedicineScreen extends StatefulWidget {
   const MedicineScreen({super.key});
+
   @override
   State<MedicineScreen> createState() => _MedicineScreenState();
 }
 
-class _MedicineScreenState extends State<MedicineScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabCtrl;
+class _MedicineScreenState extends State<MedicineScreen> {
+  bool _isBooking = false;
+  int _cartCount = 0;
 
-  static const _tabs = [
-    {'label': 'All'},
-    {'label': 'Health'},
-    {'label': 'Travel'},
-    {'label': 'Education'},
-  ];
-
-  static const _headerColor = Color(0xFF455A64);
-
-  @override
-  void initState() {
-    super.initState();
-    _tabCtrl = TabController(length: _tabs.length, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
-      body: NestedScrollView(
-        headerSliverBuilder: (_, __) => [
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 180,
-            backgroundColor: _headerColor,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-              onPressed: () => context.pop(),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                color: _headerColor,
-                child: Stack(children: [
-                  Positioned(
-                    top: -20, right: -20,
-                    child: Container(
-                      width: 140, height: 140,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.06),
-                      ),
-                    ),
-                  ),
-                  const SafeArea(
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(height: 8),
-                          Text('⭐', style: TextStyle(fontSize: 52)),
-                          SizedBox(height: 6),
-                          Text('More Services',
-                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
-                          SizedBox(height: 4),
-                          Text('Everything else you need',
-                              style: TextStyle(fontSize: 13, color: Colors.white70)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
-            ),
-            // ✅ FIX 1: Tabs evenly spread across full width
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(48),
-              child: Container(
-                color: _headerColor,
-                child: TabBar(
-                  controller: _tabCtrl,
-                  isScrollable: false,          // ✅ false = full width mein spread
-                  indicatorColor: Colors.white,
-                  indicatorWeight: 3,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white60,
-                  labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                  tabs: _tabs.map((t) => Tab(text: t['label'])).toList(),
-                ),
-              ),
-            ),
-          ),
-        ],
-        body: TabBarView(
-          controller: _tabCtrl,
-          children: _tabs.map((t) => _MoreTab(filter: t['label']!)).toList(),
-        ),
+  // ---------------- Add to cart ----------------
+  void _addToCart(_ServiceItem service) {
+    setState(() => _cartCount++);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${service.name} added to cart'),
+        backgroundColor: service.color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
-}
 
-class _MoreTab extends StatefulWidget {
-  final String filter;
-  const _MoreTab({required this.filter});
-  @override
-  State<_MoreTab> createState() => _MoreTabState();
-}
+  // ---------------- Booking with user details ----------------
+  Future<void> _bookService(
+    _ServiceItem service, {
+    String? name,
+    String? phone,
+    String? address,
+  }) async {
+    setState(() => _isBooking = true);
 
-class _MoreTabState extends State<_MoreTab> {
-  String _active = 'All';
+    final description = (name != null && name.isNotEmpty)
+        ? '${service.name} booked for $name'
+            '${phone != null && phone.isNotEmpty ? ' · $phone' : ''}'
+        : '${service.name} booked · Rating ${service.rating}';
 
-  List<String> get _filters {
-    final all = ['All'];
-    for (final s in _moreServices) {
-      final f = s['filter'] as String;
-      if (!all.contains(f)) all.add(f);
-    }
-    return all;
-  }
-
-  List<Map<String, dynamic>> get _items {
-    final list = List<Map<String, dynamic>>.from(_moreServices);
-    if (widget.filter != 'All') return list.where((s) => s['filter'] == widget.filter).toList();
-    if (_active != 'All') return list.where((s) => s['filter'] == _active).toList();
-    return list;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (widget.filter == 'All')
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                const _StatBodyItem(value: '20+', label: 'Services', color: Color(0xFF455A64)),
-                Container(width: 1, height: 32, color: Colors.grey.shade200),
-                const _StatBodyItem(value: '1M+', label: 'Users', color: Color(0xFF455A64)),
-                Container(width: 1, height: 32, color: Colors.grey.shade200),
-                const _StatBodyItemStar(value: '4.7'),
-              ],
-            ),
-          ),
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFF455A64),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [BoxShadow(color: const Color(0xFF455A64).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
-          ),
-          child: Row(children: [
-            const Text('🚀', style: TextStyle(fontSize: 30)),
-            const SizedBox(width: 12),
-            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Explore new services!', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800)),
-              Text('Use code: EXPLORE', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            ])),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-              child: const Text('Grab', style: TextStyle(color: Color(0xFF455A64), fontSize: 12, fontWeight: FontWeight.w800)),
-            ),
-          ]),
-        ),
-        const SizedBox(height: 16),
-        if (widget.filter == 'All') ...[
-          SizedBox(
-            height: 38,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _filters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, i) {
-                final f = _filters[i];
-                final isActive = f == _active;
-                return GestureDetector(
-                  onTap: () => setState(() => _active = f),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFF455A64) : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isActive ? const Color(0xFF455A64) : AppColors.border),
-                    ),
-                    child: Text(f, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
-                        color: isActive ? Colors.white : AppColors.textSecondary)),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-        ..._items.map((s) => _ServiceCard(data: s)),
-      ],
+    await HistoryService.instance.saveItem(
+      HistoryService.makeMore(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: service.name,
+        subtitle: (address != null && address.isNotEmpty)
+            ? address
+            : service.location,
+        description: description,
+        amount: service.price,
+        date: DateTime.now(),
+        status: HistoryStatus.confirmed,
+      ),
     );
+
+    setState(() => _isBooking = false);
+
+    if (!mounted) return;
+    _showBookingSuccess(service);
   }
-}
 
-// ✅ FIX 2: Book Now pe appointment bottom sheet
-class _ServiceCard extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const _ServiceCard({required this.data});
-
-  void _showBookingSheet(BuildContext context) {
-    final tagColor = Color(data['tagColor'] as int);
-    final nameCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController();
-    final ageCtrl = TextEditingController();
-    String selectedDate = '';
-    String selectedTime = '';
-    final formKey = GlobalKey<FormState>();
-
-    final dates = _nextDates();
-    final times = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
-
+  void _showBookingForm(_ServiceItem service) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -257,372 +106,554 @@ class _ServiceCard extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            left: 20, right: 20, top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
-          child: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+      builder: (sheetContext) => _BookingDetailsForm(
+        service: service,
+        onSubmit: (name, phone, address) {
+          Navigator.pop(sheetContext);
+          _bookService(service, name: name, phone: phone, address: address);
+        },
+      ),
+    );
+  }
+
+  void _showServiceDetail(_ServiceItem service) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: service.color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(service.icon, color: service.color, size: 34),
+            ),
+            const SizedBox(height: 14),
+            Text(service.name,
+                style: const TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(service.location,
+                style: const TextStyle(
+                    color: AppColors.textSecondary, fontSize: 13)),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.star_rounded,
+                    color: Color(0xFFFFC107), size: 18),
+                const SizedBox(width: 4),
+                Text('${service.rating} · ${service.reviews} reviews',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 13)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Header
-                  Row(children: [
-                    Container(
-                      width: 44, height: 44,
-                      decoration: BoxDecoration(
-                        color: tagColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(child: Text(data['icon'] as String, style: const TextStyle(fontSize: 24))),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(data['name'] as String,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                      Text('₹${data['price']} per person',
-                          style: TextStyle(fontSize: 12, color: tagColor, fontWeight: FontWeight.w700)),
-                    ])),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(ctx),
-                      child: const Icon(Icons.close_rounded, size: 22),
-                    ),
-                  ]),
-                  const SizedBox(height: 4),
-                  Text(data['desc'] as String,
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  const Divider(height: 24),
-
-                  // Full Name
-                  const Text('Full Name',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: nameCtrl,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: _inputDeco('Enter your name', Icons.person_outline_rounded, tagColor),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Phone
-                  const Text('Phone Number',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: phoneCtrl,
-                    keyboardType: TextInputType.phone,
-                    maxLength: 10,
-                    decoration: _inputDeco('10 digit mobile number', Icons.phone_outlined, tagColor),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Phone number is required';
-                      if (v.trim().length < 10) return 'Enter a valid number';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Age
-                  const Text('Age',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: ageCtrl,
-                    keyboardType: TextInputType.number,
-                    maxLength: 3,
-                    decoration: _inputDeco('Enter your age', Icons.cake_outlined, tagColor),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Age is required' : null,
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Date select
-                  const Text('Appointment Date',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 44,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: dates.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
-                      itemBuilder: (_, i) {
-                        final d = dates[i];
-                        final isSelected = d == selectedDate;
-                        return GestureDetector(
-                          onTap: () => setModalState(() => selectedDate = d),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSelected ? tagColor : Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: isSelected ? tagColor : AppColors.border),
-                            ),
-                            child: Text(d,
-                                style: TextStyle(
-                                    fontSize: 12, fontWeight: FontWeight.w700,
-                                    color: isSelected ? Colors.white : AppColors.textSecondary)),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Time select
-                  const Text('Time Slot',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: times.map((t) {
-                      final isSelected = t == selectedTime;
-                      return GestureDetector(
-                        onTap: () => setModalState(() => selectedTime = t),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected ? tagColor : Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: isSelected ? tagColor : AppColors.border),
-                          ),
-                          child: Text(t,
-                              style: TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.w700,
-                                  color: isSelected ? Colors.white : AppColors.textSecondary)),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Confirm button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (!formKey.currentState!.validate()) return;
-                        if (selectedDate.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please select a date'), behavior: SnackBarBehavior.floating));
-                          return;
-                        }
-                        if (selectedTime.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please select a time slot'), behavior: SnackBarBehavior.floating));
-                          return;
-                        }
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('✅ ${data['name']} — Booked for $selectedDate $selectedTime!'),
-                          backgroundColor: tagColor,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          duration: const Duration(seconds: 3),
-                        ));
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF455A64),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: const Text('Confirm Appointment →',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
+                  const Text('Consultation Fee',
+                      style: TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(
+                    service.price == 0
+                        ? 'FREE'
+                        : '₹${service.price.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: service.price == 0
+                          ? AppColors.success
+                          : AppColors.accent,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: 20),
+
+            // ---- Add + Book buttons (replaces old single "Open" action) ----
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _addToCart(service);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: service.color, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_shopping_cart_rounded,
+                              color: service.color, size: 18),
+                          const SizedBox(width: 6),
+                          Text('Add',
+                              style: TextStyle(
+                                  color: service.color,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showBookingForm(service);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: service.color,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text(
+                        'Book',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  List<String> _nextDates() {
-    final now = DateTime.now();
-    final days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return List.generate(6, (i) {
-      final d = now.add(Duration(days: i));
-      final label = i == 0 ? 'Today' : i == 1 ? 'Tomorrow' : '${days[d.weekday % 7]}, ${d.day} ${months[d.month - 1]}';
-      return label;
-    });
-  }
-
-  InputDecoration _inputDeco(String hint, IconData icon, Color color) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(fontSize: 13, color: AppColors.textHint),
-      prefixIcon: Icon(icon, size: 18, color: AppColors.textSecondary),
-      filled: true,
-      fillColor: const Color(0xFFF2F2F7),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: color, width: 1.5)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.error)),
-      counterText: '',
+  void _showBookingSuccess(_ServiceItem service) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle_rounded,
+                color: service.color),
+            const SizedBox(width: 8),
+            const Text('Booked!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(service.name,
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(service.location,
+                style: const TextStyle(
+                    color: AppColors.textSecondary, fontSize: 12)),
+            const SizedBox(height: 8),
+            Text(
+              service.price == 0
+                  ? 'FREE'
+                  : 'Amount: ₹${service.price.toStringAsFixed(0)}',
+              style: const TextStyle(
+                  fontWeight: FontWeight.w800, color: AppColors.primary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final tagColor = Color(data['tagColor'] as int);
-    final price = data['price'] as int;
-    final originalPrice = data['originalPrice'] as int;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 14, offset: const Offset(0, 4))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-          decoration: BoxDecoration(
-            color: tagColor.withValues(alpha: 0.08),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Row(children: [
-            Container(
-              width: 56, height: 56,
-              decoration: BoxDecoration(color: tagColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
-              child: Center(child: Text(data['icon'] as String, style: const TextStyle(fontSize: 30))),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(data['name'] as String, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 2),
-              Row(children: [
-                const Icon(Icons.location_on_rounded, size: 12, color: AppColors.textSecondary),
-                const SizedBox(width: 3),
-                Expanded(child: Text(data['location'] as String,
-                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                    maxLines: 1, overflow: TextOverflow.ellipsis)),
-              ]),
-              const SizedBox(height: 4),
-              Row(children: [
-                const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
-                Text(' ${data['rating']}  (${data['reviews']})',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-              ]),
-            ])),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: tagColor, borderRadius: BorderRadius.circular(8)),
-              child: Text(data['tag'] as String,
-                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
-            ),
-          ]),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Icon(Icons.medical_services_rounded, size: 13, color: tagColor),
-              const SizedBox(width: 5),
-              Expanded(child: Text(data['desc'] as String,
-                  style: TextStyle(fontSize: 11, color: tagColor, fontWeight: FontWeight.w600),
-                  maxLines: 1, overflow: TextOverflow.ellipsis)),
-            ]),
-            const SizedBox(height: 4),
-            Row(children: [
-              const Icon(Icons.timer_rounded, size: 13, color: AppColors.textSecondary),
-              const SizedBox(width: 5),
-              Text(data['duration'] as String,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
-            ]),
-            const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('₹$price', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: tagColor)),
-                  const SizedBox(width: 6),
-                  if (originalPrice > 0)
-                    Text('₹$originalPrice', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary,
-                        decoration: TextDecoration.lineThrough)),
-                ]),
-                const Text('per person', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-              ]),
-              // ✅ Book Now — ab appointment bottom sheet khulega
-              GestureDetector(
-                onTap: () => _showBookingSheet(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF455A64),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [BoxShadow(color: const Color(0xFF455A64).withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))],
-                  ),
-                  child: const Text('Book Now', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
-                ),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Health & Medicine'),
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+        actions: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart_outlined),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('$_cartCount item(s) in cart'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
               ),
-            ]),
-          ]),
-        ),
-      ]),
+              if (_cartCount > 0)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    constraints:
+                        const BoxConstraints(minWidth: 16, minHeight: 16),
+                    decoration: const BoxDecoration(
+                      color: AppColors.accent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$_cartCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Banner
+          Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Your Health,\nOur Priority',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              height: 1.2)),
+                      SizedBox(height: 6),
+                      Text('Book healthcare services\nfrom the comfort of home',
+                          style: TextStyle(
+                              color: Colors.white70, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                Text('🏥', style: TextStyle(fontSize: 52)),
+              ],
+            ),
+          ),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text('Our Services',
+                style:
+                    TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(height: 10),
+
+          // Services grid
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 1.3,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: _services.length,
+              itemBuilder: (_, i) {
+                final service = _services[i];
+                return GestureDetector(
+                  onTap: () => _showServiceDetail(service),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: service.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(service.icon,
+                              color: service.color, size: 22),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(service.name,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded,
+                                color: Color(0xFFFFC107),
+                                size: 13),
+                            const SizedBox(width: 3),
+                            Text(service.rating,
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary)),
+                            const Spacer(),
+                            Text(
+                              service.price == 0
+                                  ? 'Free'
+                                  : '₹${service.price.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: service.price == 0
+                                    ? AppColors.success
+                                    : AppColors.accent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _StatItem extends StatelessWidget {
-  final String value, label;
-  const _StatItem({required this.value, required this.label});
+// ====================================================================
+// Booking details form - shown when user taps "Book"
+// ====================================================================
+class _BookingDetailsForm extends StatefulWidget {
+  final _ServiceItem service;
+  final void Function(String name, String phone, String address) onSubmit;
+
+  const _BookingDetailsForm({
+    required this.service,
+    required this.onSubmit,
+  });
+
   @override
-  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
-    Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-    const SizedBox(height: 2),
-    Text(label, style: const TextStyle(fontSize: 11, color: Colors.white70)),
-  ]);
+  State<_BookingDetailsForm> createState() => _BookingDetailsFormState();
 }
 
-class _StatItemWithStar extends StatelessWidget {
-  final String value, label;
-  const _StatItemWithStar({required this.value, required this.label});
-  @override
-  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
-    Row(mainAxisSize: MainAxisSize.min, children: [
-      Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-      const SizedBox(width: 3),
-      const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
-    ]),
-    const SizedBox(height: 2),
-    Text(label, style: const TextStyle(fontSize: 11, color: Colors.white70)),
-  ]);
-}
+class _BookingDetailsFormState extends State<_BookingDetailsForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
 
-class _StatBodyItem extends StatelessWidget {
-  final String value, label;
-  final Color color;
-  const _StatBodyItem({required this.value, required this.label, required this.color});
   @override
-  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
-    Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: color)),
-    const SizedBox(height: 2),
-    Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-  ]);
-}
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
 
-class _StatBodyItemStar extends StatelessWidget {
-  final String value;
-  const _StatBodyItemStar({required this.value});
   @override
-  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
-    Row(mainAxisSize: MainAxisSize.min, children: [
-      Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF455A64))),
-      const SizedBox(width: 3),
-      const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
-    ]),
-    const SizedBox(height: 2),
-    const Text('Rating', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-  ]);
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: widget.service.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(widget.service.icon,
+                      color: widget.service.color, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Booking Details',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w800)),
+                      Text('for ${widget.service.name}',
+                          style: const TextStyle(
+                              color: AppColors.textSecondary, fontSize: 13)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
+            TextFormField(
+              controller: _nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: 'Full Name',
+                prefixIcon: const Icon(Icons.person_outline_rounded),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Please enter your name'
+                  : null,
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: 'Phone Number',
+                prefixIcon: const Icon(Icons.phone_outlined),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return 'Please enter your phone number';
+                }
+                if (v.trim().length < 10) {
+                  return 'Enter a valid phone number';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _addressController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: 'Address',
+                prefixIcon: const Icon(Icons.location_on_outlined),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Please enter your address'
+                  : null,
+            ),
+            const SizedBox(height: 22),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    widget.onSubmit(
+                      _nameController.text.trim(),
+                      _phoneController.text.trim(),
+                      _addressController.text.trim(),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: widget.service.color,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text(
+                  'Confirm Booking',
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

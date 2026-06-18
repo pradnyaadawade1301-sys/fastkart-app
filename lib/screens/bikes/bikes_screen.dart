@@ -1,6 +1,7 @@
-// lib/screens/bikes/bike_screen.dart
+// lib/screens/bikes/bikes_screen.dart
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
+import '../../services/history_service.dart';
 
 class BikeShareModel {
   final String id, type, assetPath;
@@ -63,7 +64,6 @@ class _BikeScreenState extends State<BikeScreen> {
 
   Widget _findTab() {
     return Column(children: [
-      // Active ride banner
       if (_activeRideId != null)
         Container(
           color: AppColors.success,
@@ -83,8 +83,6 @@ class _BikeScreenState extends State<BikeScreen> {
             ),
           ]),
         ),
-
-      // Stats bar
       Container(
         color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -94,14 +92,12 @@ class _BikeScreenState extends State<BikeScreen> {
           _stat('⚡', '₹25/hr', 'From'),
         ]),
       ),
-
       const Padding(
         padding: EdgeInsets.fromLTRB(16, 14, 16, 6),
         child: Row(children: [
           Text('Nearby Bikes & Scooters', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
         ]),
       ),
-
       Expanded(
         child: ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -184,8 +180,6 @@ class _BikeScreenState extends State<BikeScreen> {
             Text('₹${bike.pricePerHour}/hr · ${bike.distance} km away',
                 style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
             const SizedBox(height: 20),
-
-            // QR Code visual
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -203,7 +197,6 @@ class _BikeScreenState extends State<BikeScreen> {
               ]),
             ),
             const SizedBox(height: 16),
-
             const Text('Or enter QR code manually:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             TextField(
@@ -215,7 +208,6 @@ class _BikeScreenState extends State<BikeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
             SizedBox(width: double.infinity, height: 52,
               child: ElevatedButton(
                 onPressed: () {
@@ -265,7 +257,20 @@ class _BikeScreenState extends State<BikeScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Continue Ride')),
           ElevatedButton(
-            onPressed: () {
+            // ✅ FIXED: async + HistoryService call
+            onPressed: () async {
+              await HistoryService.instance.saveItem(
+                HistoryService.makeRide(
+                  id: 'bike_${DateTime.now().millisecondsSinceEpoch}',
+                  from: 'Bike Station',
+                  to: 'Drop Point',
+                  driverName: bike.type,
+                  distanceKm: (minutes * 0.25),
+                  durationMins: minutes,
+                  amount: cost.toDouble(),
+                  isBike: true,
+                ),
+              );
               setState(() {
                 _rideHistory.insert(0, {
                   'type': bike.type, 'minutes': minutes, 'cost': cost,

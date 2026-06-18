@@ -67,14 +67,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.primary)),
                 ),
                 const Center(
-                  child: Text('India ka apna super app',
+                  child: Text('India\'s own super app',
                     style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                 ),
                 const SizedBox(height: 40),
                 const Text('Login / Sign Up',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 6),
-                const Text('Apna naam aur phone number daalo',
+                const Text('Enter your name and phone number',
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                 const SizedBox(height: 28),
 
@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true, fillColor: Colors.white,
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Naam daalo' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter your name' : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -104,8 +104,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     filled: true, fillColor: Colors.white,
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Phone number daalo';
-                    if (v.trim().length < 10) return 'Valid phone number daalo';
+                    if (v == null || v.trim().isEmpty) return 'Enter phone number';
+                    if (v.trim().length < 10) return 'Enter a valid phone number';
                     return null;
                   },
                 ),
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       await auth.register(name: 'Guest', email: '', phone: '0000000000');
                       if (mounted) context.go('/home');
                     },
-                    child: const Text('Guest ke roop mein continue karo →',
+                    child: const Text('Continue as Guest →',
                       style: TextStyle(color: AppColors.textSecondary)),
                   ),
                 ),

@@ -22,6 +22,7 @@ dependencies:
   pinput: ^5.0.0
   shared_preferences: ^2.2.2
   flutter_svg: ^2.3.0
+  web_socket_channel: ^2.4.0   # WebSocket tracking ke liye
 
 dev_dependencies:
   flutter_test:
@@ -33,4 +34,18 @@ flutter:
   assets:
     - assets/images/electric_scooter.jpg
     - assets/images/city_bike.jpg
+    - assets/images/mountain_bike.jpg
+    - assets/images/retro.jpg
+    - assets/images/pushpa_2.jpg
+    - assets/images/bhul_bhulaiyaa_3.jpg
+    - assets/images/singham.jpg
+    - assets/images/coolie.jpg
+    - assets/images/welcome_3.jpg
+    - assets/images/jolly_LLB_3.jpg
+    - assets/images/kesari_veer.jpg
+    - assets/images/sikandar.jpg
+    - assets/images/raid_2.jpg
+    - assets/images/azaad.jpg
+    - assets/images/deva.jpg
+    - assets/images/chhaava.jpg
     - assets/images/mountain_bike.jpg

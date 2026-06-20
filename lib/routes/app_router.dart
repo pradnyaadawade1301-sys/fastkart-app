@@ -34,7 +34,7 @@ import '../screens/notification/notification_screen.dart';
 import '../screens/supports/chat_screen.dart';
 import '../screens/cart/checkout_screen.dart';
 import '../screens/rides/rides_screen.dart';
-import '../screens/favourite/favourite_screen.dart';
+import '../screens/saved/saved_screen.dart'; // ✅ FavouriteScreen ki jagah SavedScreen import
 import '../screens/leisure/leisure_screen.dart';
 import '../screens/trains/trains_screen.dart';
 import '../models/models.dart';
@@ -93,7 +93,8 @@ class AppRouter {
         routes: [
           GoRoute(path: '/home',      builder: (BuildContext _, GoRouterState __) => const HomeScreen()),
           GoRoute(path: '/search',    builder: (BuildContext _, GoRouterState __) => const SearchScreen()),
-          GoRoute(path: '/favorites', builder: (BuildContext _, GoRouterState __) => const FavouriteScreen()),
+          // ✅ /favorites ab SavedScreen kholega (bottom nav "Saved" tab isi route ko use karta hai)
+          GoRoute(path: '/favorites', builder: (BuildContext _, GoRouterState __) => const SavedScreen()),
           GoRoute(path: '/profile',   builder: (BuildContext _, GoRouterState __) => const ProfileScreen()),
           GoRoute(path: '/orders',    builder: (BuildContext _, GoRouterState __) => const OrdersScreen()),
           GoRoute(

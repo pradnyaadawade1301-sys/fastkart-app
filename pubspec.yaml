@@ -22,7 +22,8 @@ dependencies:
   pinput: ^5.0.0
   shared_preferences: ^2.2.2
   flutter_svg: ^2.3.0
-  web_socket_channel: ^2.4.0   # WebSocket tracking ke liye
+  web_socket_channel: ^2.4.0
+  
 
 dev_dependencies:
   flutter_test:
@@ -48,4 +49,3 @@ flutter:
     - assets/images/azaad.jpg
     - assets/images/deva.jpg
     - assets/images/chhaava.jpg
-    - assets/images/mountain_bike.jpg

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../services/mock_data.dart';
 import '../../services/history_service.dart';
+import 'ride_tracking_screen.dart'; // ✅ direct import for navigation
 
 class RidesScreen extends StatefulWidget {
   const RidesScreen({super.key});
@@ -691,7 +692,6 @@ class _RidesScreenState extends State<RidesScreen> {
               const SizedBox(height: 14),
               SizedBox(width: double.infinity, height: 52,
                 child: ElevatedButton(
-                  // ✅ FIXED: async + HistoryService call
                   onPressed: () async {
                     Navigator.pop(context);
                     await HistoryService.instance.saveItem(
@@ -826,7 +826,25 @@ class _RidesScreenState extends State<RidesScreen> {
                 )),
                 const SizedBox(width: 8),
                 Expanded(child: ElevatedButton(
-                  onPressed: () {},
+                  // ✅ FIX: seedha RideTrackingScreen pe Navigator.push se navigate karo,
+                  // saare required params ke saath. Pehle yeh context.push('/tracking/$pnr')
+                  // use karta tha jo generic TrackingScreen (food order ke liye) pe le jaata
+                  // tha — wahan order null hota tha aur '!' operator null pe crash kar deta tha.
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RideTrackingScreen(
+                        pnr: b['pnr'] as String,
+                        pickup: b['pickup'] as String,
+                        drop: b['drop'] as String,
+                        rideType: b['type'] as String,
+                        fare: b['fare'] as int,
+                        km: b['km'] as int,
+                        eta: b['eta'] as int,
+                        payment: b['payment'] as String,
+                      ),
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
                   child: const Text('Track Driver', style: TextStyle(fontSize: 12)),
                 )),

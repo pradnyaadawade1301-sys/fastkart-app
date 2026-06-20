@@ -277,28 +277,48 @@ class _DeliveryDetailsScreenState extends State<_DeliveryDetailsScreen> {
           '${_cityCtrl.text.trim()} - ${_pincodeCtrl.text.trim()}',
     );
 
-    final order = await context.read<OrderProvider>().placeOrder(
-      restaurantId:    widget.restaurant.id,
-      restaurantName:  widget.restaurant.name,
+    // ✅ FIX: Backend API call hata diya (ApiService.placeOrder fail ho raha tha
+    // kyunki yeh demo/mock app hai, real backend nahi hai). Ab seedha local
+    // Order object banate hain — jaisa rides/hotels/flights screens karte hain.
+    final orderId = 'ORD${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+    final paymentMethodEnum = _paymentMethod == 'Cash on Delivery'
+        ? PaymentMethod.cash
+        : _paymentMethod == 'UPI'
+            ? PaymentMethod.upi
+            : PaymentMethod.card;
+
+    final order = Order(
+      id: orderId,
+      restaurantId: widget.restaurant.id,
+      restaurantName: widget.restaurant.name,
       restaurantImage: widget.restaurant.imageUrl,
       items: [
         OrderItemModel(
           id: widget.restaurant.id,
           name: 'Order from ${widget.restaurant.name}',
+          imageUrl: widget.restaurant.imageUrl,
           quantity: 1,
           price: _minOrder,
         ),
       ],
-      subtotal:        _minOrder,
-      deliveryFee:     _deliveryFee,
-      total:           _total,
+      subtotal: _minOrder,
+      deliveryFee: _deliveryFee,
+      discount: 0,
+      total: _total,
+      status: OrderStatus.confirmed,
       deliveryAddress: address,
-      paymentMethod: _paymentMethod == 'Cash on Delivery'
-          ? PaymentMethod.cash : PaymentMethod.upi,
+      createdAt: DateTime.now(),
+      estimatedDelivery: DateTime.now().add(const Duration(minutes: 40)),
+      paymentMethod: paymentMethodEnum,
+      paymentStatus: paymentMethodEnum == PaymentMethod.cash
+          ? PaymentStatus.pending
+          : PaymentStatus.paid,
+      otp: (DateTime.now().millisecondsSinceEpoch % 9000 + 1000).toString(),
     );
 
-    setState(() => _isLoading = false);
-    if (!mounted || order == null) return;
+    // OrderProvider ki local list mein bhi add karo (taaki Orders screen / tracking kaam kare)
+    context.read<OrderProvider>().addLocalOrder(order);
 
     // ── Saved tab mein save karo ──────────────────────────────
     final isGrocery = widget.restaurant.id == 'grocery';
@@ -322,7 +342,9 @@ class _DeliveryDetailsScreenState extends State<_DeliveryDetailsScreen> {
             ),
     );
 
+    setState(() => _isLoading = false);
     if (!mounted) return;
+
     Navigator.pushReplacement(context, MaterialPageRoute(
       builder: (_) => _OrderConfirmedScreen(
         order: order,
@@ -597,7 +619,9 @@ class _OrderConfirmedScreenState extends State<_OrderConfirmedScreen>
   Widget build(BuildContext context) {
     const green = Color(0xFF2E7D32);
     final o = widget.order;
-    final firstName = widget.customerName.split(' ').first;
+    final firstName = widget.customerName.isEmpty
+        ? 'there'
+        : widget.customerName.split(' ').first;
 
     return Scaffold(
       backgroundColor: AppColors.background,

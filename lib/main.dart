@@ -5,6 +5,7 @@ import 'providers/providers.dart';
 import 'providers/favourites_provider.dart';
 import 'providers/theme_provider.dart';
 import 'routes/app_router.dart';
+import 'providers/movie_booking_provider.dart';
 
 void main() {
   runApp(const FastKartApp());
@@ -23,6 +24,7 @@ class FastKartApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => FavouritesProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => MovieBookingProvider()),
       ],
       child: Builder(
         builder: (context) {

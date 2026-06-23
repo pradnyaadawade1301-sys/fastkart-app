@@ -250,7 +250,7 @@ extension OrderStatusX on OrderStatus {
 
 // ─── Payment ──────────────────────────────────────────────────────────────────
 
-enum PaymentMethod { cash, upi, card, wallet }
+enum PaymentMethod { cash, upi, card, wallet, netBanking }
 
 enum PaymentStatus { pending, paid, failed, refunded }
 

@@ -7,20 +7,26 @@ import 'providers/theme_provider.dart';
 import 'routes/app_router.dart';
 import 'providers/movie_booking_provider.dart';
 
-void main() {
-  runApp(const FastKartApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final auth = AuthProvider();
+  await auth.loadSession(); // ✅ session restore
+
+  runApp(FastKartApp(auth: auth));
 }
 
 class FastKartApp extends StatelessWidget {
-  const FastKartApp({super.key});
+  final AuthProvider auth;
+  const FastKartApp({super.key, required this.auth});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider<AuthProvider>.value(value: auth),
         ChangeNotifierProvider(create: (_) => RestaurantProvider()),
-        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()..loadCart()), // ✅ cart restore
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => FavouritesProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
@@ -28,9 +34,8 @@ class FastKartApp extends StatelessWidget {
       ],
       child: Builder(
         builder: (context) {
-          final auth = context.read<AuthProvider>();
           final themeMode = context.watch<ThemeProvider>().themeMode;
-          AppRouter.setAuth(auth);
+          AppRouter.setAuth(context.read<AuthProvider>());
           return MaterialApp.router(
             title: 'FastKart',
             debugShowCheckedModeBanner: false,

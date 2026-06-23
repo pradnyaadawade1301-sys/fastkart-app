@@ -53,16 +53,7 @@ class OrderProvider extends ChangeNotifier {
     await loadOrders();
   }
 
-  // ── ✅ NEW: Add a locally-created order (no backend call) ───────────────────
-  // Use this when an order is placed without hitting the real API
-  // (e.g. demo/mock flows like restaurant "Order Now" form).
-  void addLocalOrder(Order order) {
-    _orders.removeWhere((o) => o.id == order.id);
-    _orders.insert(0, order);
-    notifyListeners();
-  }
-
-  // ── Place Order (real backend) ───────────────────────────────────────────────
+  // ── Place Order ────────────────────────────────────────────────────────────
   Future<Order?> placeOrder({
     required String restaurantId,
     required String restaurantName,
@@ -118,7 +109,6 @@ class OrderProvider extends ChangeNotifier {
           paymentStatus: paymentMethod == PaymentMethod.cash
               ? PaymentStatus.pending
               : PaymentStatus.paid,
-          otp: (DateTime.now().millisecondsSinceEpoch % 9000 + 1000).toString(),
         );
 
         _orders.insert(0, order);
@@ -163,10 +153,11 @@ class OrderProvider extends ChangeNotifier {
     _trackingOrderId = orderId;
 
     try {
-      // ws://10.0.2.2:8080/api/v1/orders/track/ws/{order_id}
-      final wsUrl = '${ApiConfig.baseUrl
+      // ws://10.0.2.2:8080/api/orders/track/ws/{order_id}
+      final wsUrl = ApiConfig.baseUrl
           .replaceFirst('http', 'ws')
-          .replaceFirst('/api/v1', '')}/api/v1/orders/track/ws/$orderId';
+          .replaceFirst('/api', '') +
+          '/api/orders/track/ws/$orderId';
 
       _wsChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
@@ -271,7 +262,6 @@ class OrderProvider extends ChangeNotifier {
       paymentStatus: o['payment_status'] == 'paid'
           ? PaymentStatus.paid
           : PaymentStatus.pending,
-      otp: '',
     );
   }
 

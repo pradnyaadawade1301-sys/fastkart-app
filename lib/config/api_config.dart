@@ -1,23 +1,27 @@
 // lib/config/api_config.dart
+// FastKart API Configuration
+
 class ApiConfig {
-  // ─── Yahan sirf apna production domain daalo ───────────────────────────
-  static const String _prodDomain = 'api.fastkart.in'; // <-- sirf yahi badlo
+  // ─── Environment ──────────────────────────────────────────────────────────
+  // Development:  flutter run
+  // Production:   flutter build apk --dart-define=PRODUCTION=true
+  //               flutter build appbundle --dart-define=PRODUCTION=true
+  //
+  // Android emulator ke liye dev URL: 10.0.2.2 (localhost proxy)
+  // Physical device dev:  apne computer ka LAN IP daalo
 
-  // ─── Dev URLs (kuch touch mat karo) ────────────────────────────────────
-  static const String _devHost = 'http://192.168.1.30:8080';
-  static const String _prodHost = 'https://$_prodDomain';
+  static const bool isProduction =
+      bool.fromEnvironment('PRODUCTION', defaultValue: false);
 
-  // ─── isProduction = true karo jab deploy karo ──────────────────────────
-  static const bool isProduction = false;
+  static const String _devBaseUrl  = 'http://10.0.2.2:8080/api';
+  static const String _prodBaseUrl = 'https://api.fastkart.in/api';
 
-  static String get baseHost => isProduction ? _prodHost : _devHost;
-  static String get baseUrl => '$baseHost/api';
-  // WebSocket URL (wss production mein, ws dev mein)
-  static String get wsBaseUrl =>
-isProduction ? 'wss://$_prodDomain' : 'ws://192.168.1.30:8080';
-  // Razorpay — https://dashboard.razorpay.com
-  static const String razorpayKeyId = 'rzp_test_XXXXXXXXXX';
+  static String get baseUrl => isProduction ? _prodBaseUrl : _devBaseUrl;
 
+  // /health backend root par hai, /api ke andar nahi
+  static String get healthUrl => baseUrl.replaceFirst('/api', '/health');
+
+ 
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 30);

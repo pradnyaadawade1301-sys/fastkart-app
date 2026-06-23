@@ -60,6 +60,12 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
+  void removePromo() {
+    _promoCode = '';
+    _discount = 0;
+    notifyListeners();
+  }
+
   void clear() {
     _items.clear();
     _reset();

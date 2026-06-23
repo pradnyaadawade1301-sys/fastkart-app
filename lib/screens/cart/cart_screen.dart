@@ -96,6 +96,13 @@ class _CartScreenState extends State<CartScreen> {
                         const SizedBox(width: 8),
                         Expanded(child: Text('Code "${cart.promoCode}" applied! Save ₹${cart.discount.toStringAsFixed(0)}',
                             style: const TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w600))),
+                        GestureDetector(
+                          onTap: () {
+                            cart.removePromo();
+                            _promoCtrl.clear();
+                          },
+                          child: const Icon(Icons.close, color: AppColors.success, size: 16),
+                        ),
                       ]),
                     ),
                   ],

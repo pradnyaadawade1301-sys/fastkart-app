@@ -1,7 +1,8 @@
 // lib/screens/splash_screen.dart
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/providers.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -85,7 +86,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startAnimations() async {
-    // ✅ FIX: Pehle animations chalao, phir auto-login check karo
     await Future.delayed(const Duration(milliseconds: 200));
     _badgeCtrl.forward();
     await Future.delayed(const Duration(milliseconds: 200));
@@ -97,18 +97,22 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 300));
     _btnsCtrl.forward();
 
-    // ✅ Animations complete hone ke baad check karo
     await Future.delayed(const Duration(milliseconds: 500));
-    await _checkAutoLogin();
+    _checkAutoLogin();
   }
 
-  // ✅ Auto-login check — already logged in toh seedha home
-  Future<void> _checkAutoLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
-    if (isLoggedIn && mounted) {
+  // ✅ BUG #1 FIX: AuthProvider ko directly check karo — SharedPreferences
+  // mat padho. main() mein loadSession() await ho chuka hai, isliye
+  // auth.isLoggedIn ab accurate value deta hai. GoRouter redirect bhi
+  // same provider ko dekhta hai, toh koi conflict nahi hoga.
+  void _checkAutoLogin() {
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    if (auth.isLoggedIn) {
       context.go('/home');
+      // GoRouter redirect bhi '/home' dega — dono consistent hain.
     }
+    // Not logged in → splash screen dikhta rahe, buttons available hain.
   }
 
   @override
@@ -122,10 +126,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  // ✅ FIX: Navigator.push hata diya, go_router ka context.go use kiya
-  void _goToSignIn() {
-    context.go('/login');
-  }
+  void _goToSignIn() => context.go('/login');
 
   @override
   Widget build(BuildContext context) {
@@ -329,10 +330,7 @@ class _ServiceTileState extends State<_ServiceTile>
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {

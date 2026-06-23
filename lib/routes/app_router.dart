@@ -33,11 +33,13 @@ import '../screens/offers/offers_screen.dart';
 import '../screens/notification/notification_screen.dart';
 import '../screens/supports/chat_screen.dart';
 import '../screens/cart/checkout_screen.dart';
+import '../screens/cart/order_confirmation_screen.dart';
 import '../screens/rides/rides_screen.dart';
-import '../screens/saved/saved_screen.dart'; // ✅ FavouriteScreen ki jagah SavedScreen import
+import '../screens/favourite/favourite_screen.dart';
 import '../screens/leisure/leisure_screen.dart';
 import '../screens/trains/trains_screen.dart';
 import '../models/models.dart';
+import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
 class AppRouter {
@@ -93,8 +95,7 @@ class AppRouter {
         routes: [
           GoRoute(path: '/home',      builder: (BuildContext _, GoRouterState __) => const HomeScreen()),
           GoRoute(path: '/search',    builder: (BuildContext _, GoRouterState __) => const SearchScreen()),
-          // ✅ /favorites ab SavedScreen kholega (bottom nav "Saved" tab isi route ko use karta hai)
-          GoRoute(path: '/favorites', builder: (BuildContext _, GoRouterState __) => const SavedScreen()),
+          GoRoute(path: '/favorites', builder: (BuildContext _, GoRouterState __) => const FavouriteScreen()),
           GoRoute(path: '/profile',   builder: (BuildContext _, GoRouterState __) => const ProfileScreen()),
           GoRoute(path: '/orders',    builder: (BuildContext _, GoRouterState __) => const OrdersScreen()),
           GoRoute(
@@ -143,7 +144,7 @@ class AppRouter {
       GoRoute(path: '/bikes',    builder: (BuildContext _, GoRouterState __) => const BikeScreen()),
       GoRoute(path: '/medicine', builder: (BuildContext _, GoRouterState __) => const MedicineScreen()),
       GoRoute(path: '/trains',   builder: (BuildContext _, GoRouterState __) => const TrainsScreen()),
-      GoRoute(path: '/more',     builder: (BuildContext _, GoRouterState __) => const MedicineScreen()),
+      GoRoute(path: '/more',     builder: (BuildContext _, GoRouterState __) => const LeisureScreen()),
 
       GoRoute(path: '/addresses',       builder: (BuildContext _, GoRouterState __) => const AddressesScreen()),
       GoRoute(path: '/edit-profile',    builder: (BuildContext _, GoRouterState __) => const EditProfileScreen()),
@@ -165,6 +166,14 @@ class AppRouter {
 
       GoRoute(path: '/cart',     builder: (BuildContext _, GoRouterState __) => const CartScreen()),
       GoRoute(path: '/checkout', builder: (BuildContext _, GoRouterState __) => const CheckoutScreen()),
+      GoRoute(
+        path: '/order-confirmation',
+        builder: (BuildContext context, GoRouterState state) {
+          final order = state.extra as Order?;
+          if (order == null) return const CartScreen();
+          return OrderConfirmationScreen(order: order);
+        },
+      ),
 
       GoRoute(path: '/wallet',        builder: (BuildContext _, GoRouterState __) => const WalletScreen()),
       GoRoute(path: '/offers',        builder: (BuildContext _, GoRouterState __) => const OffersScreen()),
@@ -236,21 +245,26 @@ class _PaymentMethodsScreenState extends State<_PaymentMethodsScreen> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: const Color(0xFFFF6F00).withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 6))],
           ),
-          child: Row(children: [
-            const Text('💰', style: TextStyle(fontSize: 40)),
-            const SizedBox(width: 16),
-            const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('FastKart Wallet', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-              SizedBox(height: 4),
-              Text('₹450.00 available', style: TextStyle(color: Colors.white70, fontSize: 13)),
-            ]),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-              child: const Text('Add Money', style: TextStyle(color: Color(0xFFFF6F00), fontSize: 12, fontWeight: FontWeight.w800)),
-            ),
-          ]),
+          child: Consumer<AuthProvider>(
+            builder: (context, auth, _) {
+              final balance = auth.user?.walletBalance ?? 0;
+              return Row(children: [
+                const Text('💰', style: TextStyle(fontSize: 40)),
+                const SizedBox(width: 16),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('FastKart Wallet', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text('₹${balance.toStringAsFixed(2)} available', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                ]),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+                  child: const Text('Add Money', style: TextStyle(color: Color(0xFFFF6F00), fontSize: 12, fontWeight: FontWeight.w800)),
+                ),
+              ]);
+            },
+          ),
         ),
         const SizedBox(height: 20),
         const Text('Saved Methods', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
@@ -480,7 +494,7 @@ class _PointsScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 80),
-      ]),
+      ])
     );
   }
 }

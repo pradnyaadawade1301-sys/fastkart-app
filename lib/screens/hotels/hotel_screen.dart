@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../services/mock_data.dart';
 import '../../services/history_service.dart';
+import '../payment/payment_screen.dart';
 
 // ── Local RoomOption model (HotelModel has no rooms list) ────────────────────
 class _RoomOption {
@@ -43,9 +44,11 @@ class _HotelsScreenState extends State<HotelsScreen> {
     if (_selectedHotel == null || _selectedRoom == null) return;
     setState(() => _isBooking = true);
 
+    final orderId = 'HTL${DateTime.now().millisecondsSinceEpoch}';
+
     await HistoryService.instance.saveItem(
       HistoryService.makeHotel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: orderId,
         hotelName: _selectedHotel!.name,
         city: _selectedHotel!.location,
         roomType: _selectedRoom!.type,
@@ -59,38 +62,19 @@ class _HotelsScreenState extends State<HotelsScreen> {
 
     setState(() => _isBooking = false);
     if (!mounted) return;
-    Navigator.pop(context);
-    _showBookingSuccess();
-  }
 
-  void _showBookingSuccess() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(children: [
-          Icon(Icons.hotel_rounded, color: AppColors.success),
-          SizedBox(width: 8),
-          Text('Hotel Booked!'),
-        ]),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_selectedHotel!.name,
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            Text('${_selectedRoom!.type} · $_nights nights · $_guests guests'),
-            const SizedBox(height: 8),
-            Text('Total: ₹${_totalAmount.toStringAsFixed(0)}',
-                style: const TextStyle(
-                    fontWeight: FontWeight.w800, color: AppColors.primary)),
-          ],
+    // Bottom sheet band karo
+    Navigator.pop(context);
+
+    // Payment screen pe navigate karo
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentScreen(
+          amount: _totalAmount,
+          orderId: orderId,
+          authToken: '',
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Done')),
-        ],
       ),
     );
   }
@@ -270,7 +254,7 @@ class _HotelsScreenState extends State<HotelsScreen> {
                       : Text(
                           _selectedRoom == null
                               ? 'Select a Room'
-                              : 'Confirm Booking — ₹${_totalAmount.toStringAsFixed(0)}',
+                              : 'Proceed to Payment — ₹${_totalAmount.toStringAsFixed(0)}',
                           style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.w800)),
                 ),

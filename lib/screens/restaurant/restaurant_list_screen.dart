@@ -68,12 +68,8 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => _DeliveryDetailsScreen(
-                      restaurant: restaurant,
-                    ),
-                  ));
+                  Navigator.pop(context); // bottom sheet band karo
+                  context.push('/restaurant/${restaurant.id}'); // GoRouter se navigate
                 },
                 icon: const Icon(Icons.restaurant_menu),
                 label: const Text('Order Now',
@@ -277,48 +273,28 @@ class _DeliveryDetailsScreenState extends State<_DeliveryDetailsScreen> {
           '${_cityCtrl.text.trim()} - ${_pincodeCtrl.text.trim()}',
     );
 
-    // ✅ FIX: Backend API call hata diya (ApiService.placeOrder fail ho raha tha
-    // kyunki yeh demo/mock app hai, real backend nahi hai). Ab seedha local
-    // Order object banate hain — jaisa rides/hotels/flights screens karte hain.
-    final orderId = 'ORD${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-
-    final paymentMethodEnum = _paymentMethod == 'Cash on Delivery'
-        ? PaymentMethod.cash
-        : _paymentMethod == 'UPI'
-            ? PaymentMethod.upi
-            : PaymentMethod.card;
-
-    final order = Order(
-      id: orderId,
-      restaurantId: widget.restaurant.id,
-      restaurantName: widget.restaurant.name,
+    final order = await context.read<OrderProvider>().placeOrder(
+      restaurantId:    widget.restaurant.id,
+      restaurantName:  widget.restaurant.name,
       restaurantImage: widget.restaurant.imageUrl,
       items: [
         OrderItemModel(
           id: widget.restaurant.id,
           name: 'Order from ${widget.restaurant.name}',
-          imageUrl: widget.restaurant.imageUrl,
           quantity: 1,
           price: _minOrder,
         ),
       ],
-      subtotal: _minOrder,
-      deliveryFee: _deliveryFee,
-      discount: 0,
-      total: _total,
-      status: OrderStatus.confirmed,
+      subtotal:        _minOrder,
+      deliveryFee:     _deliveryFee,
+      total:           _total,
       deliveryAddress: address,
-      createdAt: DateTime.now(),
-      estimatedDelivery: DateTime.now().add(const Duration(minutes: 40)),
-      paymentMethod: paymentMethodEnum,
-      paymentStatus: paymentMethodEnum == PaymentMethod.cash
-          ? PaymentStatus.pending
-          : PaymentStatus.paid,
-      otp: (DateTime.now().millisecondsSinceEpoch % 9000 + 1000).toString(),
+      paymentMethod: _paymentMethod == 'Cash on Delivery'
+          ? PaymentMethod.cash : PaymentMethod.upi,
     );
 
-    // OrderProvider ki local list mein bhi add karo (taaki Orders screen / tracking kaam kare)
-    context.read<OrderProvider>().addLocalOrder(order);
+    setState(() => _isLoading = false);
+    if (!mounted || order == null) return;
 
     // ── Saved tab mein save karo ──────────────────────────────
     final isGrocery = widget.restaurant.id == 'grocery';
@@ -342,16 +318,8 @@ class _DeliveryDetailsScreenState extends State<_DeliveryDetailsScreen> {
             ),
     );
 
-    setState(() => _isLoading = false);
     if (!mounted) return;
-
-    Navigator.pushReplacement(context, MaterialPageRoute(
-      builder: (_) => _OrderConfirmedScreen(
-        order: order,
-        customerName: _nameCtrl.text.trim(),
-        paymentMethod: _paymentMethod,
-      ),
-    ));
+    context.pushReplacement('/order-confirmation', extra: order);
   }
 
   @override
@@ -362,7 +330,7 @@ class _DeliveryDetailsScreenState extends State<_DeliveryDetailsScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: BackButton(onPressed: () => Navigator.pop(context)),
+        leading: BackButton(onPressed: () => context.pop()),
         title: const Text('Delivery Details',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
         centerTitle: true,
@@ -619,9 +587,7 @@ class _OrderConfirmedScreenState extends State<_OrderConfirmedScreen>
   Widget build(BuildContext context) {
     const green = Color(0xFF2E7D32);
     final o = widget.order;
-    final firstName = widget.customerName.isEmpty
-        ? 'there'
-        : widget.customerName.split(' ').first;
+    final firstName = widget.customerName.split(' ').first;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -727,7 +693,7 @@ class _OrderConfirmedScreenState extends State<_OrderConfirmedScreen>
               SizedBox(
                 width: double.infinity, height: 52,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+                  onPressed: () => context.go('/home'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -763,8 +729,8 @@ class _OrderConfirmedScreenState extends State<_OrderConfirmedScreen>
             onPressed: () {
               context.read<OrderProvider>().updateStatus(
                   orderId, OrderStatus.cancelled);
-              Navigator.pop(context);
-              Navigator.of(context).popUntil((r) => r.isFirst);
+              Navigator.pop(context); // dialog band karo
+              context.go('/home');    // GoRouter se home pe jaao
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text('Order has been cancelled'),
                 backgroundColor: AppColors.error,

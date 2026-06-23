@@ -26,9 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final auth = context.read<AuthProvider>();
-    final ok = await auth.register(
-      name: _nameCtrl.text.trim(),
-      email: '',
+    final ok = await auth.login(
+      name:  _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
     );
     if (ok && mounted) context.go('/home');
@@ -47,35 +46,27 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 40),
-                // Logo
                 Center(
                   child: Container(
                     width: 90, height: 90,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFFFF6F00), Color(0xFFFFB300)]),
+                          colors: [Color(0xFFFF6F00), Color(0xFFFFB300)]),
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    child: const Center(
-                      child: Text('🛒', style: TextStyle(fontSize: 44)),
-                    ),
+                    child: const Center(child: Text('🛒', style: TextStyle(fontSize: 44))),
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Center(
-                  child: Text('FastKart',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.primary)),
-                ),
-                const Center(
-                  child: Text('India\'s own super app',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                ),
+                const Center(child: Text('FastKart',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.primary))),
+                const Center(child: Text("India's own super app",
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary))),
                 const SizedBox(height: 40),
-                const Text('Login / Sign Up',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                const Text('Login', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 6),
-                const Text('Enter your name and phone number',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                const Text('Enter your name and mobile number to continue',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                 const SizedBox(height: 28),
 
                 // Name field
@@ -88,7 +79,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true, fillColor: Colors.white,
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter your name' : null,
+                  validator: (v) {
+                    if (v == null || v.trim().length < 2) return 'Please enter a valid name';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -96,51 +90,57 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
+                  maxLength: 10,
                   decoration: InputDecoration(
-                    labelText: 'Phone Number',
+                    labelText: 'Mobile Number',
                     prefixIcon: const Icon(Icons.phone_rounded),
                     prefixText: '+91 ',
+                    counterText: '',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true, fillColor: Colors.white,
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Enter phone number';
-                    if (v.trim().length < 10) return 'Enter a valid phone number';
+                    if (v == null || v.trim().isEmpty) return 'Please enter your mobile number';
+                    if (v.trim().length != 10) return 'Please enter a 10-digit number';
+                    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(v.trim())) return 'Please enter a valid Indian mobile number';
                     return null;
                   },
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 8),
 
-                // Login button
+                // Error message
                 Consumer<AuthProvider>(
-                  builder: (_, auth, __) => SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: auth.isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: auth.isLoading
-                        ? const SizedBox(width: 22, height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                        : const Text('Login / Sign Up',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                    ),
+                  builder: (_, auth, __) => auth.error != null
+                      ? Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(auth.error!,
+                              style: const TextStyle(color: AppColors.error, fontSize: 12)),
+                        )
+                      : const SizedBox(),
+                ),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.push('/register'),
+                    child: const Text("Don't have an account? Register",
+                        style: TextStyle(color: AppColors.primary, fontSize: 12)),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Guest login
-                Center(
-                  child: TextButton(
-                    onPressed: () async {
-                      final auth = context.read<AuthProvider>();
-                      await auth.register(name: 'Guest', email: '', phone: '0000000000');
-                      if (mounted) context.go('/home');
-                    },
-                    child: const Text('Continue as Guest →',
-                      style: TextStyle(color: AppColors.textSecondary)),
+                Consumer<AuthProvider>(
+                  builder: (_, auth, __) => SizedBox(
+                    width: double.infinity, height: 52,
+                    child: ElevatedButton(
+                      onPressed: auth.isLoading ? null : _login,
+                      style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      child: auth.isLoading
+                          ? const SizedBox(width: 22, height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                          : const Text('Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                    ),
                   ),
                 ),
               ],

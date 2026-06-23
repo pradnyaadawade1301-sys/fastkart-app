@@ -93,7 +93,10 @@ class _TableBookingScreenState extends State<TableBookingScreen> {
             itemCount: 7,
             itemBuilder: (_, i) {
               final d = DateTime.now().add(Duration(days: i + 1));
-              final isSelected = _date.day == d.day && _date.month == d.month;
+              // BUG FIX: added _date.year == d.year check to avoid wrong matches next year
+              final isSelected = _date.day == d.day &&
+                                 _date.month == d.month &&
+                                 _date.year == d.year;
               final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
               return GestureDetector(
                 onTap: () => setState(() { _date = d; _selectedTime = null; }),
@@ -259,7 +262,6 @@ class _TableBookingScreenState extends State<TableBookingScreen> {
         ElevatedButton(
           onPressed: (_selectedTime != null && _selectedTable != null && paymentReady)
               ? () {
-                  // ── Saved tab mein save karo ──────────────────────────────
                   final tableName = _tables.firstWhere((t) => t['id'] == _selectedTable)['name'] as String;
                   HistoryService.instance.saveItem(
                     HistoryService.makeMore(
@@ -287,7 +289,12 @@ class _TableBookingScreenState extends State<TableBookingScreen> {
     );
   }
 
-  String _monthShort(int m) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+  String _monthShort(int m) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final idx = m - 1;
+    if (idx < 0 || idx >= months.length) return '';
+    return months[idx];
+  }
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -324,10 +331,8 @@ class _ConfirmedView extends StatefulWidget {
   final int guests;
   final String paymentMethod;
   const _ConfirmedView({
-    required this.date,
-    required this.time,
-    required this.guests,
-    required this.paymentMethod,
+    required this.date, required this.time,
+    required this.guests, required this.paymentMethod,
   });
   @override
   State<_ConfirmedView> createState() => _ConfirmedViewState();

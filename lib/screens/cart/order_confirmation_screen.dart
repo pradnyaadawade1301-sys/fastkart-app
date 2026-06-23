@@ -193,10 +193,11 @@ class OrderConfirmationScreen extends StatelessWidget {
 
   String _paymentLabel(PaymentMethod method) {
     switch (method) {
-      case PaymentMethod.cash:   return 'Cash on Delivery';
-      case PaymentMethod.upi:    return 'UPI';
-      case PaymentMethod.card:   return 'Card / Stripe';
-      case PaymentMethod.wallet: return 'Wallet';
+      case PaymentMethod.cash:       return 'Cash on Delivery';
+      case PaymentMethod.upi:        return 'UPI';
+      case PaymentMethod.card:       return 'Card';
+      case PaymentMethod.wallet:     return 'Wallet';
+      case PaymentMethod.netBanking: return 'Net Banking';
     }
   }
 }

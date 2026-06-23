@@ -17,31 +17,62 @@ class RestaurantDetailScreen extends StatefulWidget {
 
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabs;
+  TabController? _tabs;
   Restaurant? _r;
   List<String> _cats = [];
 
   @override
   void initState() {
     super.initState();
+    _tryFindRestaurant();
+
+    final prov = context.read<RestaurantProvider>();
+    if (!prov.isLoaded) {
+      prov.loadData();
+      prov.addListener(_onRestaurantsUpdated);
+    }
+  }
+
+  void _tryFindRestaurant() {
     _r = context.read<RestaurantProvider>().byId(widget.restaurantId);
     if (_r != null) {
       _cats = ['All', ..._r!.menu.map((f) => f.category).toSet()];
+      _tabs = TabController(length: _cats.length < 1 ? 1 : _cats.length, vsync: this);
     }
-    _tabs = TabController(length: _cats.isEmpty ? 1 : _cats.length, vsync: this);
+  }
+
+  void _onRestaurantsUpdated() {
+    if (_r != null) return;
+    final prov = context.read<RestaurantProvider>();
+    setState(() => _tryFindRestaurant());
+    if (_r != null) prov.removeListener(_onRestaurantsUpdated);
   }
 
   @override
   void dispose() {
-    _tabs.dispose();
+    context.read<RestaurantProvider>().removeListener(_onRestaurantsUpdated);
+    _tabs?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_r == null) {
-      return const Scaffold(
-          body: Center(child: Text('Restaurant not found')));
+      final prov = context.watch<RestaurantProvider>();
+      if (!prov.isLoaded) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
+      return Scaffold(
+        body: Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const Icon(Icons.restaurant_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('Restaurant not found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            TextButton(onPressed: () => context.pop(), child: const Text('Go Back')),
+          ]),
+        ),
+      );
     }
     final r = _r!;
 

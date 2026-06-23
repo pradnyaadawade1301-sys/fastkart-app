@@ -1,4 +1,5 @@
 // lib/screens/movies/movies_screen.dart
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
@@ -136,21 +137,96 @@ int _categoryPrice(SeatCategory cat) {
   }
 }
 
+// ✅ NEW: deterministic per-show seat occupancy.
+// Same movie + theater + showtime always produces the same layout
+// (so it's not a single fixed mock list reused everywhere), while a
+// different show genuinely looks different — closer to real seat maps.
+const List<String> _allSeatRows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+
+Set<String> _generateOccupiedSeats({
+  required String movieTitle,
+  required String theater,
+  required String showtime,
+  required int seatsPerRow,
+}) {
+  final key = '$movieTitle|$theater|$showtime';
+  final seed = key.codeUnits.fold<int>(0, (acc, c) => (acc * 31 + c) & 0x7fffffff);
+  final rnd = Random(seed);
+  final occupied = <String>{};
+
+  for (final row in _allSeatRows) {
+    // each row independently 15%–55% occupied, varies per show via the seed
+    final occupancy = 2 + rnd.nextInt(5); // 2..6 seats out of 12
+    final nums = List.generate(seatsPerRow, (i) => i + 1)..shuffle(rnd);
+    for (var i = 0; i < occupancy; i++) {
+      occupied.add('$row${nums[i]}');
+    }
+  }
+  return occupied;
+}
+
 class _SeatMap extends StatefulWidget {
+  final String movieTitle;
+  final String theater;
+  final String showtime;
   final Function(List<String>, int) onSeatsChanged;
-  const _SeatMap({required this.onSeatsChanged});
+  const _SeatMap({
+    required this.movieTitle,
+    required this.theater,
+    required this.showtime,
+    required this.onSeatsChanged,
+  });
   @override
   State<_SeatMap> createState() => _SeatMapState();
 }
 
 class _SeatMapState extends State<_SeatMap> {
   final Set<String> _selected = {};
-  final Set<String> _booked = {
-    'A3', 'B6', 'B7', 'C2', 'C8', 'D1', 'D5', 'E3', 'E9',
-    'F4', 'G6', 'G5', 'H3', 'H4', 'H5', 'H6', 'H7', 'H8',
-    'I9', 'I10', 'J6', 'J5', 'K6', 'K5', 'K4', 'K3',
-  };
+  late Set<String> _booked;
   final int seatsPerRow = 12;
+
+  @override
+  void initState() {
+    super.initState();
+    _booked = _buildBookedSeats();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SeatMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Theater/showtime can change while this screen stays mounted
+    // (e.g. user goes back a step) — regenerate occupancy for the new show.
+    if (oldWidget.movieTitle != widget.movieTitle ||
+        oldWidget.theater != widget.theater ||
+        oldWidget.showtime != widget.showtime) {
+      setState(() {
+        _selected.clear();
+        _booked = _buildBookedSeats();
+      });
+      widget.onSeatsChanged(const [], 0);
+    }
+  }
+
+  Set<String> _buildBookedSeats() {
+    final booked = _generateOccupiedSeats(
+      movieTitle: widget.movieTitle,
+      theater: widget.theater,
+      showtime: widget.showtime,
+      seatsPerRow: seatsPerRow,
+    );
+
+    // ✅ Lock seats this user has actually booked for this exact show,
+    // so the same seats can never be selected/double-booked again.
+    final provider = context.read<MovieBookingProvider>();
+    for (final b in provider.activeBookings) {
+      if (b.movieTitle == widget.movieTitle &&
+          b.theater == widget.theater &&
+          b.showtime == widget.showtime) {
+        booked.addAll(b.seats);
+      }
+    }
+    return booked;
+  }
 
   int get _totalPrice {
     int total = 0;
@@ -636,7 +712,14 @@ class _BookingFlowState extends State<_BookingFlow> {
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary))),
       ]),
       const SizedBox(height: 12),
-      _SeatMap(onSeatsChanged: (seats, total) => setState(() { _selectedSeats = seats; _seatTotal = total; })),
+      // ✅ Pass movie + theater + showtime so occupancy reflects this exact
+      // show instead of one fixed mock layout for every booking.
+      _SeatMap(
+        movieTitle: widget.movie.title,
+        theater: _selectedTheater ?? '',
+        showtime: _selectedTime ?? '',
+        onSeatsChanged: (seats, total) => setState(() { _selectedSeats = seats; _seatTotal = total; }),
+      ),
       if (_selectedSeats.isNotEmpty) ...[
         const SizedBox(height: 12),
         Container(

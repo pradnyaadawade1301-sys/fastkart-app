@@ -39,7 +39,6 @@ class _GroceryScreenState extends State<GroceryScreen>
   static const _tabFilters = ['All', 'Vegetables', 'Fruits', 'Dairy', 'Staples'];
   String _activeFilter = 'All';
 
-  // qty map — default 0 for all items
   final Map<String, int> _qty = {};
 
   int get _cartCount => _qty.values.fold(0, (s, v) => s + v);
@@ -185,6 +184,8 @@ class _GroceryScreenState extends State<GroceryScreen>
               onRemove: (id) => setState(() {
                 if ((_qty[id] ?? 0) > 0) _qty[id] = (_qty[id]! - 1);
               }),
+              // ── NEW: Order Now tapped on a single item ──
+              onOrderNow: (item) => _showOrderNowForm(item),
             );
           }).toList(),
         ),
@@ -311,7 +312,6 @@ class _GroceryScreenState extends State<GroceryScreen>
             SizedBox(
               width: double.infinity, height: 52,
               child: ElevatedButton(
-                // ── CHANGE 2: Place Order opens user details form ──
                 onPressed: () {
                   Navigator.pop(context);
                   _showUserDetailsForm();
@@ -330,13 +330,27 @@ class _GroceryScreenState extends State<GroceryScreen>
     );
   }
 
-  // ── User Details Form ──────────────────────────────────────────────────────
-  void _showUserDetailsForm() {
+  // ── Order Now: single item ka seedha form ─────────────────────────────────
+  void _showOrderNowForm(Map<String, dynamic> item) {
+    _showUserDetailsForm(
+      itemName: item['name'] as String,
+      itemIcon: item['icon'] as String,
+      itemPrice: item['price'] as int,
+    );
+  }
+
+  // ── User Details + Payment Form ───────────────────────────────────────────
+  void _showUserDetailsForm({
+    String? itemName,
+    String? itemIcon,
+    int? itemPrice,
+  }) {
     final nameCtrl    = TextEditingController();
     final phoneCtrl   = TextEditingController();
     final addressCtrl = TextEditingController();
     final pinCtrl     = TextEditingController();
     final formKey     = GlobalKey<FormState>();
+    String selectedPayment = 'Cash on Delivery';
 
     showModalBottomSheet(
       context: context,
@@ -350,115 +364,193 @@ class _GroceryScreenState extends State<GroceryScreen>
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          child: Form(
-            key: formKey,
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-                ),
-              ),
-              // Header
-              Row(children: [
-                Container(
-                  width: 36, height: 36,
-                  decoration: BoxDecoration(color: _headerColor.withValues(alpha: 0.1), shape: BoxShape.circle),
-                  child: const Icon(Icons.person_rounded, color: _headerColor, size: 20),
-                ),
-                const SizedBox(width: 10),
-                const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Delivery Details', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-                  Text('Please fill your delivery details', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                ]),
-                const Spacer(),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-              ]),
-              const SizedBox(height: 20),
-
-              // Name field
-              _buildTextField(
-                controller: nameCtrl,
-                label: 'Full Name',
-                hint: 'Enter your full name',
-                icon: Icons.person_outline_rounded,
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
-                keyboardType: TextInputType.name,
-              ),
-              const SizedBox(height: 14),
-
-              // Phone field
-              _buildTextField(
-                controller: phoneCtrl,
-                label: 'Mobile Number',
-                hint: '10 digit number',
-                icon: Icons.phone_outlined,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Phone number is required';
-                  if (v.trim().length != 10) return 'Enter a valid 10-digit number';
-                  return null;
-                },
-                keyboardType: TextInputType.phone,
-                maxLength: 10,
-              ),
-              const SizedBox(height: 14),
-
-              // Address field
-              _buildTextField(
-                controller: addressCtrl,
-                label: 'Delivery Address',
-                hint: 'House/flat no., street, area',
-                icon: Icons.home_outlined,
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Address is required' : null,
-                maxLines: 2,
-              ),
-              const SizedBox(height: 14),
-
-              // PIN code field
-              _buildTextField(
-                controller: pinCtrl,
-                label: 'PIN Code',
-                hint: '6-digit PIN code',
-                icon: Icons.location_on_outlined,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'PIN code is required';
-                  if (v.trim().length != 6) return 'Enter a valid 6-digit PIN';
-                  return null;
-                },
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-              ),
-              const SizedBox(height: 24),
-
-              // Confirm Order button
-              SizedBox(
-                width: double.infinity, height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('✅ Order confirmed! Delivering to ${nameCtrl.text} in 10 mins'),
-                        backgroundColor: const Color(0xFF2E7D32),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        duration: const Duration(seconds: 3),
-                      ));
-                      setState(() => _qty.clear());
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _headerColor,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
+          child: StatefulBuilder(
+            builder: (ctx, setS) => SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 40, height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                    ),
                   ),
-                  child: const Text('Confirm Order', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
-                ),
+                  // Header
+                  Row(children: [
+                    Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(color: _headerColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+                      child: const Icon(Icons.person_rounded, color: _headerColor, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Delivery Details', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                      Text('Fill your delivery & payment details', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    ]),
+                    const Spacer(),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  ]),
+
+                  // ── Item summary (only for Order Now) ──
+                  if (itemName != null) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _headerColor.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(children: [
+                        Text(itemIcon ?? '', style: const TextStyle(fontSize: 26)),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(itemName,
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14))),
+                        Text('₹$itemPrice',
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: _headerColor)),
+                      ]),
+                    ),
+                  ],
+
+                  const SizedBox(height: 20),
+
+                  // Name
+                  _buildTextField(
+                    controller: nameCtrl,
+                    label: 'Full Name',
+                    hint: 'Enter your full name',
+                    icon: Icons.person_outline_rounded,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                    keyboardType: TextInputType.name,
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Phone
+                  _buildTextField(
+                    controller: phoneCtrl,
+                    label: 'Mobile Number',
+                    hint: '10 digit number',
+                    icon: Icons.phone_outlined,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'Phone number is required';
+                      if (v.trim().length != 10) return 'Enter a valid 10-digit number';
+                      return null;
+                    },
+                    keyboardType: TextInputType.phone,
+                    maxLength: 10,
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Address
+                  _buildTextField(
+                    controller: addressCtrl,
+                    label: 'Delivery Address',
+                    hint: 'House/flat no., street, area',
+                    icon: Icons.home_outlined,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Address is required' : null,
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 14),
+
+                  // PIN
+                  _buildTextField(
+                    controller: pinCtrl,
+                    label: 'PIN Code',
+                    hint: '6-digit PIN code',
+                    icon: Icons.location_on_outlined,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'PIN code is required';
+                      if (v.trim().length != 6) return 'Enter a valid 6-digit PIN';
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Payment Method ──────────────────────────────────────
+                  Row(children: [
+                    Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(color: _headerColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+                      child: const Icon(Icons.payment_rounded, color: _headerColor, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Payment Method', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                      Text('Select how you want to pay', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    ]),
+                  ]),
+                  const SizedBox(height: 12),
+                  ...['Cash on Delivery', 'UPI', 'Credit / Debit Card'].map((method) {
+                    final isSelected = selectedPayment == method;
+                    return GestureDetector(
+                      onTap: () => setS(() => selectedPayment = method),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected ? _headerColor.withValues(alpha: 0.07) : const Color(0xFFF9F9F9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? _headerColor : const Color(0xFFE0E0E0),
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(children: [
+                          Text(
+                            method == 'Cash on Delivery' ? '💵'
+                                : method == 'UPI' ? '📱' : '💳',
+                            style: const TextStyle(fontSize: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(method,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isSelected ? _headerColor : AppColors.textPrimary,
+                              )),
+                          const Spacer(),
+                          if (isSelected)
+                            const Icon(Icons.check_circle_rounded, color: _headerColor, size: 20),
+                        ]),
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 20),
+
+                  // Confirm Order button
+                  SizedBox(
+                    width: double.infinity, height: 52,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (formKey.currentState!.validate()) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('✅ Order confirmed! Delivering to ${nameCtrl.text} in 10 mins • $selectedPayment'),
+                            backgroundColor: const Color(0xFF2E7D32),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            duration: const Duration(seconds: 3),
+                          ));
+                          setState(() => _qty.clear());
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _headerColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Confirm Order', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ]),
               ),
-              const SizedBox(height: 8),
-            ]),
+            ),
           ),
         ),
       ),
@@ -519,12 +611,15 @@ class _GroceryTab extends StatelessWidget {
   final Map<String, int> qty;
   final ValueChanged<String> onAdd;
   final ValueChanged<String> onRemove;
+  // ── NEW ──
+  final ValueChanged<Map<String, dynamic>> onOrderNow;
 
   const _GroceryTab({
     required this.filter,
     required this.qty,
     required this.onAdd,
     required this.onRemove,
+    required this.onOrderNow,
   });
 
   List<Map<String, dynamic>> get _items {
@@ -568,7 +663,6 @@ class _GroceryTab extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Filter chips (only show in All tab)
         if (filter == 'All') ...[
           SizedBox(
             height: 38,
@@ -577,13 +671,13 @@ class _GroceryTab extends StatelessWidget {
           const SizedBox(height: 16),
         ],
 
-        // Item cards
         ..._items.map((item) => _GroceryCard(
           item: item,
-          // ── CHANGE 1: default qty is 0 (from map, unset = 0) ──
           qty: qty[item['id'] as String] ?? 0,
           onAdd: () => onAdd(item['id'] as String),
           onRemove: () => onRemove(item['id'] as String),
+          // ── NEW ──
+          onOrderNow: () => onOrderNow(item),
         )),
       ],
     );
@@ -635,8 +729,16 @@ class _GroceryCard extends StatelessWidget {
   final Map<String, dynamic> item;
   final int qty;
   final VoidCallback onAdd, onRemove;
+  // ── NEW ──
+  final VoidCallback onOrderNow;
 
-  const _GroceryCard({required this.item, required this.qty, required this.onAdd, required this.onRemove});
+  const _GroceryCard({
+    required this.item,
+    required this.qty,
+    required this.onAdd,
+    required this.onRemove,
+    required this.onOrderNow,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -720,6 +822,7 @@ class _GroceryCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
             ]),
             const SizedBox(height: 12),
+            // Price + counter row (unchanged)
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -733,7 +836,6 @@ class _GroceryCard extends StatelessWidget {
                 ]),
                 const Text('per person', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
               ]),
-              // ── CHANGE 1: Hamesha - 0 + counter dikhao (Book Now button hataaya) ──
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF00897B),
@@ -753,7 +855,6 @@ class _GroceryCard extends StatelessWidget {
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
-                    // Shows 0 by default, increments on +
                     child: Text('$qty', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
                   ),
                   GestureDetector(
@@ -770,6 +871,23 @@ class _GroceryCard extends StatelessWidget {
                 ]),
               ),
             ]),
+
+            // ── NEW: Order Now button ──────────────────────────────────
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: ElevatedButton(
+                onPressed: onOrderNow,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE65100),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: const Text('Order Now',
+                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+              ),
+            ),
           ]),
         ),
       ]),

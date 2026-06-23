@@ -106,13 +106,11 @@ class AppRouter {
         ],
       ),
 
-      // ✅ Grocery category directly opens GroceryScreen
       GoRoute(
         path: '/category/grocery',
         builder: (BuildContext _, GoRouterState __) => const GroceryScreen(),
       ),
 
-      // ✅ Leisure category directly opens LeisureScreen
       GoRoute(
         path: '/category/leisure',
         builder: (BuildContext context, GoRouterState state) {
@@ -121,7 +119,6 @@ class AppRouter {
         },
       ),
 
-      // All other categories go to CategoryInfoScreen
       GoRoute(
         path: '/category/:id',
         builder: (BuildContext context, GoRouterState state) =>
@@ -158,10 +155,15 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) =>
             RestaurantDetailScreen(restaurantId: state.pathParameters['id'] ?? ''),
       ),
+
+      // BUG FIX: pass restaurantId as query param for O(n) search instead of O(n²)
       GoRoute(
         path: '/food/:id',
         builder: (BuildContext context, GoRouterState state) =>
-            FoodDetailScreen(foodId: state.pathParameters['id'] ?? ''),
+            FoodDetailScreen(
+              foodId: state.pathParameters['id'] ?? '',
+              restaurantId: state.uri.queryParameters['rid'],
+            ),
       ),
 
       GoRoute(path: '/cart',     builder: (BuildContext _, GoRouterState __) => const CartScreen()),
@@ -171,7 +173,7 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) {
           final order = state.extra as Order?;
           if (order == null) return const CartScreen();
-          return OrderConfirmationScreen(order: order);
+          return OrderConfirmationScreen(orderId: order.id);
         },
       ),
 
@@ -254,7 +256,8 @@ class _PaymentMethodsScreenState extends State<_PaymentMethodsScreen> {
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   const Text('FastKart Wallet', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 4),
-                  Text('₹${balance.toStringAsFixed(2)} available', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  Text('₹${balance.toStringAsFixed(2)} available',
+                      style: const TextStyle(color: Colors.white70, fontSize: 13)),
                 ]),
                 const Spacer(),
                 Container(
@@ -281,38 +284,50 @@ class _PaymentMethodsScreenState extends State<_PaymentMethodsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDefault ? const Color(0xFFFF6F00) : Colors.grey.shade200, width: isDefault ? 2 : 1),
+        border: Border.all(
+            color: isDefault ? const Color(0xFFFF6F00) : Colors.grey.shade200,
+            width: isDefault ? 2 : 1),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 3))],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(14),
         leading: Container(
           width: 44, height: 44,
-          decoration: BoxDecoration(color: const Color(0xFFFF6F00).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+              color: const Color(0xFFFF6F00).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12)),
           child: Center(child: Text(m['icon'] as String, style: const TextStyle(fontSize: 22))),
         ),
         title: Row(children: [
-          Text(m['label'] as String, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+          Text(m['label'] as String,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
           if (isDefault) ...[
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: const Color(0xFFFF6F00), borderRadius: BorderRadius.circular(6)),
-              child: const Text('Default', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+              decoration: BoxDecoration(
+                  color: const Color(0xFFFF6F00), borderRadius: BorderRadius.circular(6)),
+              child: const Text('Default',
+                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
             ),
           ],
         ]),
-        subtitle: Text(m['detail'] as String, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        subtitle: Text(m['detail'] as String,
+            style: const TextStyle(fontSize: 12, color: Colors.grey)),
         trailing: PopupMenuButton(
           itemBuilder: (_) => [
-            if (!isDefault) const PopupMenuItem(value: 'default', child: Text('Set as Default')),
-            const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+            if (!isDefault)
+              const PopupMenuItem(value: 'default', child: Text('Set as Default')),
+            const PopupMenuItem(
+                value: 'delete',
+                child: Text('Delete', style: TextStyle(color: Colors.red))),
           ],
           onSelected: (v) {
             if (v == 'default') {
-              setState(() { for (var x in _methods) {
-              x['isDefault'] = false;
-            } m['isDefault'] = true; });
+              setState(() {
+                for (var x in _methods) { x['isDefault'] = false; }
+                m['isDefault'] = true;
+              });
             }
             if (v == 'delete') setState(() => _methods.remove(m));
           },
@@ -326,52 +341,77 @@ class _PaymentMethodsScreenState extends State<_PaymentMethodsScreen> {
     final ctrl = TextEditingController();
     showModalBottomSheet(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      builder: (_) => StatefulBuilder(builder: (ctx, setS) => Container(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-          const Text('Add Payment Method', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 16),
-          Row(children: [
-            _typeBtn('upi', '📱 UPI', selectedType, (v) => setS(() => selectedType = v)),
-            const SizedBox(width: 10),
-            _typeBtn('card', '💳 Card', selectedType, (v) => setS(() => selectedType = v)),
-            const SizedBox(width: 10),
-            _typeBtn('netbanking', '🏦 NetBank', selectedType, (v) => setS(() => selectedType = v)),
-          ]),
-          const SizedBox(height: 16),
-          TextField(
-            controller: ctrl,
-            decoration: InputDecoration(
-              hintText: selectedType == 'upi' ? 'Enter UPI ID' : selectedType == 'card' ? 'Card Number' : 'Bank Name',
-              filled: true, fillColor: const Color(0xFFF8F5F0),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setS) => Container(
+          padding: EdgeInsets.fromLTRB(
+              20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+          decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                  color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            const Text('Add Payment Method',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 16),
+            Row(children: [
+              _typeBtn('upi', '📱 UPI', selectedType, (v) => setS(() => selectedType = v)),
+              const SizedBox(width: 10),
+              _typeBtn('card', '💳 Card', selectedType, (v) => setS(() => selectedType = v)),
+              const SizedBox(width: 10),
+              _typeBtn('netbanking', '🏦 NetBank', selectedType, (v) => setS(() => selectedType = v)),
+            ]),
+            const SizedBox(height: 16),
+            TextField(
+              controller: ctrl,
+              decoration: InputDecoration(
+                hintText: selectedType == 'upi'
+                    ? 'Enter UPI ID'
+                    : selectedType == 'card' ? 'Card Number' : 'Bank Name',
+                filled: true, fillColor: const Color(0xFFF8F5F0),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(width: double.infinity, height: 52,
-            child: ElevatedButton(
-              onPressed: () {
-                if (ctrl.text.isEmpty) return;
-                setState(() => _methods.add({
-                  'id': DateTime.now().millisecondsSinceEpoch.toString(),
-                  'type': selectedType,
-                  'label': selectedType == 'upi' ? 'UPI' : selectedType == 'card' ? 'Card' : 'NetBanking',
-                  'detail': ctrl.text,
-                  'icon': selectedType == 'upi' ? '📱' : selectedType == 'card' ? '💳' : '🏦',
-                  'isDefault': false,
-                }));
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF6F00),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-              child: const Text('Save Method', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
-            )),
-        ]),
-      )),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity, height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (ctrl.text.isEmpty) return;
+                  setState(() => _methods.add({
+                    'id': DateTime.now().millisecondsSinceEpoch.toString(),
+                    'type': selectedType,
+                    'label': selectedType == 'upi'
+                        ? 'UPI'
+                        : selectedType == 'card' ? 'Card' : 'NetBanking',
+                    'detail': ctrl.text,
+                    'icon': selectedType == 'upi'
+                        ? '📱'
+                        : selectedType == 'card' ? '💳' : '🏦',
+                    'isDefault': false,
+                  }));
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF6F00),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Save Method',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800)),
+              ),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 
@@ -384,7 +424,8 @@ class _PaymentMethodsScreenState extends State<_PaymentMethodsScreen> {
         decoration: BoxDecoration(
           color: isActive ? const Color(0xFFFF6F00) : Colors.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isActive ? const Color(0xFFFF6F00) : Colors.grey.shade300),
+          border: Border.all(
+              color: isActive ? const Color(0xFFFF6F00) : Colors.grey.shade300),
         ),
         child: Text(label, textAlign: TextAlign.center,
           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
@@ -395,57 +436,69 @@ class _PaymentMethodsScreenState extends State<_PaymentMethodsScreen> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// POINTS SCREEN
+// POINTS SCREEN — reads real user points from AuthProvider
 // ═══════════════════════════════════════════════════════════════════════════════
 class _PointsScreen extends StatelessWidget {
   const _PointsScreen();
 
   @override
   Widget build(BuildContext context) {
-    const points = 1280;
-    const cashback = '12.80';
+    final auth     = Provider.of<AuthProvider>(context, listen: false);
+    final points   = auth.user?.points ?? 0;
+    final cashback = (points / 100).toStringAsFixed(2);
 
     final history = [
-      {'emoji': '🍔', 'title': 'Food Order #1042',    'pts': '+120', 'date': '10 Jun 2026', 'plus': true},
-      {'emoji': '🎬', 'title': 'Movie Booking',        'pts': '+50',  'date': '08 Jun 2026', 'plus': true},
-      {'emoji': '🏨', 'title': 'Hotel Stay – Mumbai',  'pts': '+200', 'date': '01 Jun 2026', 'plus': true},
-      {'emoji': '⭐', 'title': 'Review Submitted',     'pts': '+20',  'date': '28 May 2026', 'plus': true},
-      {'emoji': '🛒', 'title': 'Points Redeemed',      'pts': '-100', 'date': '20 May 2026', 'plus': false},
-      {'emoji': '👥', 'title': 'Referral Bonus',       'pts': '+100', 'date': '15 May 2026', 'plus': true},
+      {'emoji': '🍔', 'title': 'Food Order #1042',   'pts': '+120', 'date': '10 Jun 2026', 'plus': true},
+      {'emoji': '🎬', 'title': 'Movie Booking',       'pts': '+50',  'date': '08 Jun 2026', 'plus': true},
+      {'emoji': '🏨', 'title': 'Hotel Stay – Mumbai', 'pts': '+200', 'date': '01 Jun 2026', 'plus': true},
+      {'emoji': '⭐', 'title': 'Review Submitted',    'pts': '+20',  'date': '28 May 2026', 'plus': true},
+      {'emoji': '🛒', 'title': 'Points Redeemed',     'pts': '-100', 'date': '20 May 2026', 'plus': false},
+      {'emoji': '👥', 'title': 'Referral Bonus',      'pts': '+100', 'date': '15 May 2026', 'plus': true},
     ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
         backgroundColor: const Color(0xFFE65100),
-        title: const Text('My Points', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        title: const Text('My Points',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
         leading: BackButton(color: Colors.white, onPressed: () => Navigator.pop(context)),
       ),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Container(
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFFFF6F00), Color(0xFFFFB300)],
-              begin: Alignment.topLeft, end: Alignment.bottomRight),
+            gradient: const LinearGradient(
+                colors: [Color(0xFFFF6F00), Color(0xFFFFB300)],
+                begin: Alignment.topLeft, end: Alignment.bottomRight),
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: const Color(0xFFFF6F00).withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8))],
+            boxShadow: [BoxShadow(
+                color: const Color(0xFFFF6F00).withValues(alpha: 0.4),
+                blurRadius: 20, offset: const Offset(0, 8))],
           ),
           child: Column(children: [
             const Text('⭐', style: TextStyle(fontSize: 52)),
             const SizedBox(height: 8),
-            const Text('$points', style: TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w900)),
-            const Text('Total Points', style: TextStyle(color: Colors.white70, fontSize: 14)),
+            Text('$points',
+                style: const TextStyle(color: Colors.white, fontSize: 42,
+                    fontWeight: FontWeight.w900)),
+            const Text('Total Points',
+                style: TextStyle(color: Colors.white70, fontSize: 14)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
-              child: const Text('= ₹$cashback cashback value',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+              decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20)),
+              child: Text('= ₹$cashback cashback value',
+                  style: const TextStyle(color: Colors.white,
+                      fontWeight: FontWeight.w700, fontSize: 13)),
             ),
           ]),
         ),
         const SizedBox(height: 24),
-        const Text('How to Earn Points', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        const Text('How to Earn Points',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
         ...[
           {'emoji': '🍔', 'text': 'Order food — 1 point per ₹1 spent'},
@@ -461,40 +514,52 @@ class _PointsScreen extends StatelessWidget {
           child: Row(children: [
             Text(item['emoji']!, style: const TextStyle(fontSize: 24)),
             const SizedBox(width: 12),
-            Expanded(child: Text(item['text']!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+            Expanded(child: Text(item['text']!,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
           ]),
         )),
         const SizedBox(height: 24),
-        const Text('Points History', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        const Text('Points History',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)]),
+            boxShadow: [BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)]),
           child: Column(
             children: history.asMap().entries.map((e) {
-              final i = e.key;
+              final i    = e.key;
               final item = e.value;
               final isPlus = item['plus'] as bool;
               return Column(children: [
                 ListTile(
                   leading: Container(width: 42, height: 42,
                     decoration: BoxDecoration(
-                      color: (isPlus ? const Color(0xFF4CAF50) : const Color(0xFFE53935)).withValues(alpha: 0.1),
+                      color: (isPlus
+                              ? const Color(0xFF4CAF50)
+                              : const Color(0xFFE53935))
+                          .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12)),
-                    child: Center(child: Text(item['emoji'] as String, style: const TextStyle(fontSize: 20)))),
-                  title: Text(item['title'] as String, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                  subtitle: Text(item['date'] as String, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                    child: Center(child: Text(item['emoji'] as String,
+                        style: const TextStyle(fontSize: 20)))),
+                  title: Text(item['title'] as String,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  subtitle: Text(item['date'] as String,
+                      style: const TextStyle(fontSize: 11, color: Colors.grey)),
                   trailing: Text(item['pts'] as String,
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15,
-                      color: isPlus ? const Color(0xFF4CAF50) : const Color(0xFFE53935))),
+                      color: isPlus
+                          ? const Color(0xFF4CAF50)
+                          : const Color(0xFFE53935))),
                 ),
-                if (i < history.length - 1) const Divider(height: 1, indent: 66),
+                if (i < history.length - 1)
+                  const Divider(height: 1, indent: 66),
               ]);
             }).toList(),
           ),
         ),
         const SizedBox(height: 80),
-      ])
+      ]),
     );
   }
 }

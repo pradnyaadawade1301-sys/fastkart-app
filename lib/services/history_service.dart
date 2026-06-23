@@ -22,8 +22,25 @@ class HistoryService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
     if (raw == null) return [];
-    final list = jsonDecode(raw) as List;
-    return list.map((e) => HistoryItem.fromJson(e as Map<String, dynamic>)).toList();
+
+    // BUG FIX: hard cast `as List` crashes if stored JSON is a Map or malformed.
+    // Now safely decode and validate the type before iterating.
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) {
+        // Stored value is not a list (e.g. a Map) — clear corrupt data and return empty
+        await prefs.remove(_key);
+        return [];
+      }
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map((e) => HistoryItem.fromJson(e))
+          .toList();
+    } catch (_) {
+      // JSON decode failed — clear corrupt data and return empty
+      await prefs.remove(_key);
+      return [];
+    }
   }
 
   Future<List<HistoryItem>> getByCategory(HistoryCategory category) async {
@@ -83,7 +100,11 @@ class HistoryService {
     subtitle: '$city · $nights nights · $guests guests',
     description: '$roomType · $nights nights · $guests adults',
     amount: amount, date: checkIn, status: status,
-    extra: {'checkIn': checkIn.toIso8601String(), 'checkOut': checkOut.toIso8601String(), 'roomType': roomType},
+    extra: {
+      'checkIn': checkIn.toIso8601String(),
+      'checkOut': checkOut.toIso8601String(),
+      'roomType': roomType,
+    },
   );
 
   static HistoryItem makeLeisure({
@@ -107,7 +128,10 @@ class HistoryService {
     subtitle: '${distanceKm.toStringAsFixed(1)} km · $durationMins mins',
     description: 'Driver: $driverName · ${distanceKm.toStringAsFixed(1)} km · $durationMins mins',
     amount: amount, date: DateTime.now(), status: status,
-    extra: {'from': from, 'to': to, 'driver': driverName, 'distanceKm': distanceKm, 'durationMins': durationMins},
+    extra: {
+      'from': from, 'to': to, 'driver': driverName,
+      'distanceKm': distanceKm, 'durationMins': durationMins,
+    },
   );
 
   static HistoryItem makeTravel({
@@ -138,6 +162,7 @@ class HistoryService {
     HistoryStatus status = HistoryStatus.success,
   }) => HistoryItem(
     id: id, category: HistoryCategory.more, title: title,
-    subtitle: subtitle, description: description, amount: amount, date: date, status: status,
+    subtitle: subtitle, description: description,
+    amount: amount, date: date, status: status,
   );
 }

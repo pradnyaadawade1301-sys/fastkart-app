@@ -26,7 +26,7 @@ class FastKartApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: auth),
         ChangeNotifierProvider(create: (_) => RestaurantProvider()),
-        ChangeNotifierProvider(create: (_) => CartProvider()..loadCart()), // ✅ cart restore
+        ChangeNotifierProvider(create: (_) => CartProvider()), // ✅ cart restore
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => FavouritesProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),

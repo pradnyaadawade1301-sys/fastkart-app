@@ -98,7 +98,7 @@ class FoodItem {
 
   bool get hasDiscount => originalPrice > 0 && originalPrice > price;
   double get discountPct =>
-      hasDiscount ? ((originalPrice - price) / originalPrice) * 100 : 0;
+      originalPrice > 0 && hasDiscount ? ((originalPrice - price) / originalPrice) * 100 : 0;
 }
 
 // ─── Restaurant ───────────────────────────────────────────────────────────────

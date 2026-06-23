@@ -95,11 +95,29 @@ class HistoryItem {
       subtitle:    json['subtitle'] as String,
       description: json['description'] as String,
       date:        DateTime.parse(json['date'] as String),
-      amount:      (json['amount'] as num).toDouble(),
-      status:      HistoryStatus.values.byName(json['status'] as String),
-      category:    HistoryCategory.values.byName(json['category'] as String),
+      // BUG FIX: amount was missing — caused crash on fromJson
+      amount:      (json['amount'] as num?)?.toDouble() ?? 0.0,
+      // BUG FIX: byName throws if string doesn't match — wrapped in try-catch
+      status:      _parseStatus(json['status'] as String? ?? ''),
+      category:    _parseCategory(json['category'] as String? ?? ''),
       imageUrl:    json['imageUrl'] as String?,
       extra:       (json['extra'] as Map<String, dynamic>?) ?? {},
     );
+  }
+}
+
+HistoryStatus _parseStatus(String str) {
+  try {
+    return HistoryStatus.values.byName(str);
+  } catch (_) {
+    return HistoryStatus.pending;
+  }
+}
+
+HistoryCategory _parseCategory(String str) {
+  try {
+    return HistoryCategory.values.byName(str);
+  } catch (_) {
+    return HistoryCategory.more;
   }
 }

@@ -68,8 +68,8 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pop(context); // bottom sheet band karo
-                  context.push('/restaurant/${restaurant.id}'); // GoRouter se navigate
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => _DeliveryDetailsScreen(restaurant: restaurant)));
                 },
                 icon: const Icon(Icons.restaurant_menu),
                 label: const Text('Order Now',
